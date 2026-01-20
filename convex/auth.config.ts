@@ -8,9 +8,7 @@
 export default {
   providers: [
     {
-      // This reads from Convex environment variable (not process.env)
-      // Set via: npx convex env set CLERK_JWT_ISSUER_DOMAIN "https://..."
-      domain: "https://oriented-quetzal-4.clerk.accounts.dev",
+      domain: "https://closing-sculpin-49.clerk.accounts.dev", // Your Clerk issuer URL
       applicationID: "convex",
     },
   ],
