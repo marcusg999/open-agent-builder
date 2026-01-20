@@ -393,7 +393,7 @@ Return a JSON object with:
         // ══════════════════════════════════════
         {
           id: "end-1",
-          type: "end", // ← Changed from "output" to "end"
+          type: "end", 
           position: { x: 100, y: 1250 },
           data: {
             label: "📦 Campaign Deliverables",
