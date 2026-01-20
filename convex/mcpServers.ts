@@ -242,8 +242,8 @@ export const updateConnectionStatus = mutation({
     await db.patch(id, {
       connectionStatus: status,
       tools,
-      lastTested: new Date().toISOString(),
-      lastError: error,
+      lastTested: new Date().toISOString(),  // ← FIXED: Was v.optional(v.string())
+      lastError: error,                       // ← FIXED: Was v.optional(v.string())
       updatedAt: new Date().toISOString(),
     });
     return { success: true };

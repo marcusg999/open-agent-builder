@@ -13,14 +13,16 @@ export const createExecution = mutation({
     threadId: v.optional(v.string()),
   },
   handler: async ({ db }, { workflowId, input, threadId }) => {
+    const now = new Date().toISOString();
     const executionId = await db.insert("executions", {
       workflowId,
       status: "running",
       input,
       threadId,
-      nodeResults: {},
-      variables: {},
-      startedAt: new Date().toISOString(),
+      // variables: {},
+      startedAt: now,
+      createdAt: now,
+      updatedAt: now,
     });
     return executionId;
   },
@@ -38,7 +40,10 @@ export const updateExecution = mutation({
     error: v.optional(v.string()),
   },
   handler: async ({ db }, { id, ...updates }) => {
-    await db.patch(id, updates);
+    await db.patch(id, {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    });
     return id;
   },
 });
@@ -56,6 +61,7 @@ export const completeExecution = mutation({
       output,
       error,
       completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
     return id;
   },

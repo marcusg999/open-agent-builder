@@ -45,12 +45,13 @@ export const generate = mutation({
     const keyPrefix = key.substring(0, 15) + "...";
 
     const apiKeyId = await ctx.db.insert("apiKeys", {
-      key: keyHash,
+      keyHash: keyHash,
       keyPrefix,
       userId: identity.subject,
       name: args.name,
       usageCount: 0,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     // Return plain key ONCE (never shown again!)
@@ -113,7 +114,7 @@ export const verify = mutation({
 
     const apiKey = await ctx.db
       .query("apiKeys")
-      .withIndex("by_key", (q) => q.eq("key", keyHash))
+      .withIndex("by_keyHash", (q) => q.eq("keyHash", keyHash))
       .first();
 
     if (!apiKey) {
@@ -131,7 +132,7 @@ export const verify = mutation({
     // Update usage stats
     await ctx.db.patch(apiKey._id, {
       lastUsedAt: new Date().toISOString(),
-      usageCount: apiKey.usageCount + 1,
+      usageCount: (apiKey.usageCount || 0) + 1,
     });
 
     return {

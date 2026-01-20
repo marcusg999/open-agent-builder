@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Convex Approvals - Human-in-the-loop workflow approvals
@@ -24,15 +25,15 @@ export const create = mutation({
     const now = new Date().toISOString();
 
     const approvalDoc = await ctx.db.insert("approvals", {
-      approvalId: args.approvalId,
-      workflowId: args.workflowId,
-      executionId: args.executionId,
-      nodeId: args.nodeId,
-      message: args.message,
-      status: "pending",
-      userId: args.userId,
-      createdAt: now,
-    });
+  approvalId: args.approvalId,
+  workflowId: args.workflowId,
+  executionId: args.executionId as Id<"executions">,
+  message: args.message,
+  status: "pending",
+  userId: args.userId,
+  createdAt: now,
+  updatedAt: now,
+});
 
     return approvalDoc;
   },
@@ -97,7 +98,7 @@ export const approve = mutation({
     await ctx.db.patch(approval._id, {
       status: "approved",
       respondedAt: now,
-      respondedBy: args.userId,
+      approvedBy: args.userId,
     });
 
     return { success: true, status: "approved" };
@@ -130,7 +131,7 @@ export const reject = mutation({
     await ctx.db.patch(approval._id, {
       status: "rejected",
       respondedAt: now,
-      respondedBy: args.userId,
+      approvedBy: args.userId,
     });
 
     return { success: true, status: "rejected", reason: args.reason };
@@ -171,7 +172,7 @@ export const getByExecution = query({
   handler: async (ctx, args) => {
     const approvals = await ctx.db
       .query("approvals")
-      .withIndex("by_execution", (q) => q.eq("executionId", args.executionId))
+      .withIndex("by_execution", (q) => q.eq("executionId", args.executionId as Id<"executions">))
       .order("desc")
       .collect();
 
