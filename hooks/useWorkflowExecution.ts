@@ -106,9 +106,11 @@ export function useWorkflowExecution() {
         signal: abortControllerRef.current.signal,
       });
 
-      if (!response.ok) {
-        throw new Error('Workflow execution failed');
-      }
+     if (!response.ok) {
+  const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+  console.error('❌ API Error:', response.status, errorData);
+  throw new Error(`Workflow execution failed: ${response.status} - ${JSON.stringify(errorData)}`);
+    }
 
       // Handle SSE stream
       const reader = response.body?.getReader();
