@@ -154,7 +154,7 @@ Return a JSON object with:
             description: "Gathers real-time trend data",
             config: {
               toolName: "web_search",
-              provider: "kie",
+              provider: "anthropic",
               parameters: {
                 query: "viral marketing trends {{targetAudience}} 2025",
                 maxResults: 10
@@ -273,7 +273,7 @@ Return a JSON object with:
             label: "🎬 Visual Generator Agent",
             description: "Creates AI-generated visual assets and storyboard frames",
             config: {
-              provider: "kie",
+              provider: "anthropic",
               model: "kie:claude-sonnet-4-20250514",
               systemPrompt: `You are an AI image generation specialist for cinematic advertising.
 
@@ -319,7 +319,7 @@ Return a JSON object with:
             description: "Generates storyboard frames via AI",
             config: {
               toolName: "generate_image",
-              provider: "kie",
+              provider: "anthropic",
               parameters: {
                 prompts: "{{imagePrompts}}",
                 model: "dall-e-3",
@@ -340,7 +340,7 @@ Return a JSON object with:
             label: "📈 Campaign Strategist Agent",
             description: "Develops distribution and optimization strategy",
             config: {
-              provider: "kie",
+              provider: "anthropic",
               model: "kie:claude-sonnet-4-20250514",
               systemPrompt: `You are a digital marketing strategist specializing in video ad campaigns.
 

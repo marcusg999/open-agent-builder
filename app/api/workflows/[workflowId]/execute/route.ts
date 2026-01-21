@@ -8,16 +8,22 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ workflowId: string }> }
 ) {
-  // Validate API key
+  // Validate API key (allow unauthenticated for local dev)
   const authResult = await validateApiKey(request);
   if (!authResult.authenticated) {
-    return createUnauthorizedResponse(authResult.error || 'Authentication required');
+    // In development, allow execution without auth
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ Running in dev mode - bypassing auth');
+    } else {
+      return createUnauthorizedResponse(authResult.error || 'Authentication required');
+    }
   }
 
   try {
     const { workflowId } = await params;
     const body = await request.json();
     const { input, workflow } = body;
+    // ... rest of the code
 
     console.log('API: Executing workflow', workflowId, 'with input:', input);
 
