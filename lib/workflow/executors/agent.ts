@@ -73,7 +73,20 @@ export async function executeAgentNode(
 
     // Use the already-substituted instructions from line 20
     // Don't re-process or append context if variables are already substituted
-    const contextualPrompt = instructions;
+    // Build contextual prompt with substituted instructions AND previous output
+let contextualPrompt = instructions;
+
+// If there's output from previous node, append it as context
+if (lastOutput && typeof lastOutput !== 'undefined') {
+  const outputContext = typeof lastOutput === 'string' 
+    ? lastOutput 
+    : JSON.stringify(lastOutput, null, 2);
+  
+  // Only append if not already included via variable substitution
+  if (!instructions.includes(outputContext.substring(0, 50))) {
+    contextualPrompt = `${instructions}\n\n${outputContext}`;
+  }
+}
 
     // Prepare messages
     const messages = data.includeChatHistory && state.chatHistory.length > 0

@@ -58,8 +58,9 @@ function sanitizeWorkflowForSave(workflow: Workflow) {
     animated: edge.animated
   })) ?? [];
 
-  return {
+return {
     id: workflow.id,
+    customId: workflow.customId || workflow.id,
     name: workflow.name,
     description: workflow.description,
     nodes: cleanNodes,
@@ -70,6 +71,8 @@ function sanitizeWorkflowForSave(workflow: Workflow) {
     _id: workflow._id,
   };
 }
+
+/* ---------------------------- main hook ---------------------------- */
 /* ---------------------------- main hook ---------------------------- */
 
 export function useWorkflow(workflowId?: string) {

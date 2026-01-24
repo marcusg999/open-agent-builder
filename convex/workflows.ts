@@ -72,8 +72,8 @@ export const seedCinematicAdTemplate = mutation({
         // ══════════════════════════════════════
         {
           id: "start-1",
-          type: "start", // ← Keep as "start"
-          position: { x: 100, y: 100 },
+          type: "start",
+          position: { x: 100, y: 400 },
           data: {
             label: "Campaign Input",
             description: "Initial campaign requirements and brand context",
@@ -83,6 +83,12 @@ export const seedCinematicAdTemplate = mutation({
                   name: "brandName",
                   type: "text",
                   label: "Brand Name",
+                  required: true
+                },
+                {
+                  name: "productName",
+                  type: "text",
+                  label: "Product Name",
                   required: true
                 },
                 {
@@ -100,7 +106,20 @@ export const seedCinematicAdTemplate = mutation({
                 {
                   name: "campaignGoals",
                   type: "textarea",
-                  label: "Campaign Goals"
+                  label: "Campaign Goals",
+                  required: true
+                },
+                {
+                  name: "tone",
+                  type: "text",
+                  label: "Tone",
+                  required: false
+                },
+                {
+                  name: "distributionChannels",
+                  type: "textarea",
+                  label: "Distribution Channels",
+                  required: false
                 }
               ]
             }
@@ -112,14 +131,32 @@ export const seedCinematicAdTemplate = mutation({
         // ══════════════════════════════════════
         {
           id: "agent-trend-analyst",
-          type: "agent", // ← Changed from "model" to "agent"
-          position: { x: 100, y: 250 },
+          type: "agent",
+          position: { x: 450, y: 400 },
           data: {
-            label: "🔍 Trend Analyst Agent",
+            label: "Trend Analyst Agent",
+            name: "Trend Analyst Agent",
+            nodeName: "Trend Analyst Agent",
             description: "Analyzes current cultural trends and viral patterns",
+            nodeType: "agent",
+            model: "anthropic/claude-sonnet-4-5-20250929",
+            includeChatHistory: true,
+            outputFormat: "Text",
+            showSearchSources: false,
+            instructions: `You are analyzing a campaign for the following brand and product:
+
+Brand: {{brandName}}
+Product: {{productName}}
+Description: {{productDescription}}
+Target Audience: {{targetAudience}}
+Campaign Goals: {{campaignGoals}}
+Tone: {{tone}}
+Distribution: {{distributionChannels}}
+
+Based on this information, analyze current trends relevant to this audience and campaign.`,
             config: {
               provider: "anthropic",
-              model: "kie:claude-sonnet-4-20250514",
+              model: "claude-sonnet-4-20250514",
               systemPrompt: `You are an expert trend analyst specializing in viral marketing and cultural zeitgeist.
 
 RESPONSIBILITIES:
@@ -147,14 +184,15 @@ Return a JSON object with:
 
         {
           id: "tool-trend-research",
-          type: "mcp", // ← Changed from "action" to "mcp"
-          position: { x: 400, y: 250 },
+          type: "mcp",
+          position: { x: 800, y: 400 },
           data: {
-            label: "📊 Web Research Tool",
+            label: "Web Research Tool",
+            nodeType: "mcp",
             description: "Gathers real-time trend data",
             config: {
               toolName: "web_search",
-              provider: "anthropic",
+              provider: "mcp",
               parameters: {
                 query: "viral marketing trends {{targetAudience}} 2025",
                 maxResults: 10
@@ -168,14 +206,33 @@ Return a JSON object with:
         // ══════════════════════════════════════
         {
           id: "agent-creative-director",
-          type: "agent", // ← Changed from "model" to "agent"
-          position: { x: 100, y: 450 },
+          type: "agent",
+          position: { x: 1150, y: 400 },
           data: {
-            label: "🎨 Creative Director Agent",
+            label: "Creative Director Agent",
+            name: "Creative Director Agent",
+            nodeName: "Creative Director Agent",
             description: "Develops cinematic ad concepts and visual narratives",
+            nodeType: "agent",
+            model: "anthropic/claude-sonnet-4-5-20250929",
+            includeChatHistory: true,
+            outputFormat: "Text",
+            showSearchSources: false,
+            instructions: `Based on the trend analysis below, create a cinematic ad concept:
+
+TREND ANALYSIS:
+{{lastOutput}}
+
+BRAND CONTEXT:
+- Brand: {{brandName}}
+- Product: {{productDescription}}
+- Target: {{targetAudience}}
+- Goals: {{campaignGoals}}
+
+Develop a high-concept cinematic narrative with detailed storyboard.`,
             config: {
               provider: "anthropic",
-              model: "kie:claude-sonnet-4-20250514",
+              model: "claude-sonnet-4-20250514",
               systemPrompt: `You are a world-class creative director for cinematic advertisements.
 
 CONTEXT:
@@ -219,14 +276,27 @@ Return a JSON object with:
         // ══════════════════════════════════════
         {
           id: "agent-scriptwriter",
-          type: "agent", // ← Changed from "model" to "agent"
-          position: { x: 100, y: 650 },
+          type: "agent",
+          position: { x: 1500, y: 400 },
           data: {
-            label: "✍️ Scriptwriter Agent",
+            label: "Scriptwriter Agent",
+            name: "Scriptwriter Agent",
+            nodeName: "Scriptwriter Agent",
             description: "Crafts compelling dialogue and voiceover copy",
+            nodeType: "agent",
+            model: "anthropic/claude-sonnet-4-5-20250929",
+            includeChatHistory: true,
+            outputFormat: "Text",
+            showSearchSources: false,
+            instructions: `Based on the creative concept below, write the complete ad script:
+
+CREATIVE CONCEPT:
+{{lastOutput}}
+
+Write compelling voiceover, dialogue, and ensure pacing matches the visual beats.`,
             config: {
               provider: "anthropic",
-              model: "kie:claude-sonnet-4-20250514",
+              model: "claude-sonnet-4-20250514",
               systemPrompt: `You are an award-winning commercial scriptwriter.
 
 CREATIVE BRIEF:
@@ -267,14 +337,27 @@ Return a JSON object with:
         // ══════════════════════════════════════
         {
           id: "agent-visual-generator",
-          type: "agent", // ← Changed from "model" to "agent"
-          position: { x: 100, y: 850 },
+          type: "agent",
+          position: { x: 1850, y: 400 },
           data: {
-            label: "🎬 Visual Generator Agent",
+            label: "Visual Generator Agent",
+            name: "Visual Generator Agent",
+            nodeName: "Visual Generator Agent",
             description: "Creates AI-generated visual assets and storyboard frames",
+            nodeType: "agent",
+            model: "anthropic/claude-sonnet-4-5-20250929",
+            includeChatHistory: true,
+            outputFormat: "Text",
+            showSearchSources: false,
+            instructions: `Based on the script and storyboard below, generate detailed image prompts:
+
+SCRIPT & STORYBOARD:
+{{lastOutput}}
+
+Create AI image generation prompts for each key frame with technical specifications.`,
             config: {
               provider: "anthropic",
-              model: "kie:claude-sonnet-4-20250514",
+              model: "claude-sonnet-4-20250514",
               systemPrompt: `You are an AI image generation specialist for cinematic advertising.
 
 STORYBOARD:
@@ -312,14 +395,15 @@ Return a JSON object with:
 
         {
           id: "tool-image-gen",
-          type: "mcp", // ← Changed from "action" to "mcp"
-          position: { x: 400, y: 850 },
+          type: "mcp",
+          position: { x: 2200, y: 400 },
           data: {
-            label: "🖼️ Image Generation",
+            label: "Image Generation",
+            nodeType: "mcp",
             description: "Generates storyboard frames via AI",
             config: {
               toolName: "generate_image",
-              provider: "anthropic",
+              provider: "mcp",
               parameters: {
                 prompts: "{{imagePrompts}}",
                 model: "dall-e-3",
@@ -334,14 +418,32 @@ Return a JSON object with:
         // ══════════════════════════════════════
         {
           id: "agent-strategist",
-          type: "agent", // ← Changed from "model" to "agent"
-          position: { x: 100, y: 1050 },
+          type: "agent",
+          position: { x: 2550, y: 400 },
           data: {
-            label: "📈 Campaign Strategist Agent",
+            label: "Campaign Strategist Agent",
+            name: "Campaign Strategist Agent",
+            nodeName: " Campaign Strategist Agent",
             description: "Develops distribution and optimization strategy",
+            nodeType: "agent",
+            model: "anthropic/claude-sonnet-4-5-20250929",
+            includeChatHistory: true,
+            outputFormat: "Text",
+            showSearchSources: false,
+            instructions: `Based on all the campaign assets below, create the distribution strategy:
+
+CAMPAIGN ASSETS:
+{{lastOutput}}
+
+ORIGINAL BRIEF:
+- Target Audience: {{targetAudience}}
+- Distribution Channels: {{distributionChannels}}
+- Campaign Goals: {{campaignGoals}}
+
+Develop platform-specific strategies, A/B tests, and KPIs.`,
             config: {
               provider: "anthropic",
-              model: "kie:claude-sonnet-4-20250514",
+              model: "claude-sonnet-4-20250514",
               systemPrompt: `You are a digital marketing strategist specializing in video ad campaigns.
 
 CAMPAIGN ASSETS:
@@ -394,9 +496,10 @@ Return a JSON object with:
         {
           id: "end-1",
           type: "end", 
-          position: { x: 100, y: 1250 },
+          position: { x: 2900, y: 400 },
           data: {
-            label: "📦 Campaign Deliverables",
+            label: "Campaign Deliverables",
+            nodeType: "end",
             description: "Final packaged outputs ready for production",
             config: {
               outputs: [
@@ -457,7 +560,7 @@ export const saveWorkflow = mutation({
     // Try to find existing workflow by customId or id
     const customIdToUse = args.customId || args.id;
     
-    let existing: any = null; // FIX: Changed from 'null' to 'any'
+    let existing: any = null;
     
     if (customIdToUse) {
       existing = await ctx.db
