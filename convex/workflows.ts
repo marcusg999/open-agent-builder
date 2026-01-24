@@ -437,3 +437,95 @@ Return a JSON object with:
     return { success: true, message: "Cinematic Ad Agent Suite template seeded successfully" };
   },
 });
+
+export const saveWorkflow = mutation({
+  args: {
+    id: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    nodes: v.array(v.any()),
+    edges: v.array(v.any()),
+    customId: v.optional(v.string()),
+    category: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    _convexId: v.optional(v.string()),
+    _id: v.optional(v.string()),
+    createdAt: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Try to find existing workflow by customId or id
+    const customIdToUse = args.customId || args.id;
+    
+    let existing: any = null; // FIX: Changed from 'null' to 'any'
+    
+    if (customIdToUse) {
+      existing = await ctx.db
+        .query('workflows')
+        .filter((q) => q.eq(q.field('customId'), customIdToUse))
+        .first();
+    }
+
+    // If not found by customId, try by Convex _id
+    if (!existing && args._convexId) {
+      try {
+        existing = await ctx.db.get(args._convexId as any);
+      } catch (e) {
+        // Invalid ID format, ignore
+      }
+    }
+
+    const now = new Date().toISOString();
+    
+    if (existing) {
+      // Update existing workflow
+      await ctx.db.patch(existing._id, {
+        name: args.name,
+        description: args.description,
+        nodes: args.nodes,
+        edges: args.edges,
+        category: args.category,
+        tags: args.tags,
+        updatedAt: now,
+      });
+      
+      return { 
+        success: true, 
+        workflowId: existing._id,
+        workflow: {
+          ...existing,
+          name: args.name,
+          description: args.description,
+          nodes: args.nodes,
+          edges: args.edges,
+          updatedAt: now,
+        }
+      };
+    } else {
+      // Create new workflow
+      const workflowData = {
+        customId: customIdToUse,
+        name: args.name,
+        description: args.description || '',
+        nodes: args.nodes,
+        edges: args.edges,
+        category: args.category || 'general',
+        tags: args.tags || [],
+        isTemplate: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      const newId = await ctx.db.insert('workflows', workflowData);
+      
+      return { 
+        success: true, 
+        workflowId: newId,
+        workflow: {
+          _id: newId,
+          ...workflowData,
+        }
+      };
+    }
+  },
+});

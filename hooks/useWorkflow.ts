@@ -6,19 +6,70 @@ import { cleanupInvalidEdges } from '@/lib/workflow/edge-cleanup';
 /* ----------------------------- helpers ----------------------------- */
 
 function sanitizeWorkflowForSave(workflow: Workflow) {
+  // Helper to remove circular references and non-serializable data
+  const cleanNodeData = (data: any): any => {
+    if (!data || typeof data !== 'object') return data;
+    
+    // Remove known problematic properties
+    const cleaned: any = {};
+    for (const key in data) {
+      if (key === 'Provider' || key === 'component' || key === 'ref') {
+        continue; // Skip React-specific properties
+      }
+      
+      const value = data[key];
+      
+      // Handle different value types
+      if (value === null || value === undefined) {
+        cleaned[key] = value;
+      } else if (typeof value === 'function') {
+        continue; // Skip functions
+      } else if (Array.isArray(value)) {
+        cleaned[key] = value.map(item => 
+          typeof item === 'object' ? cleanNodeData(item) : item
+        );
+      } else if (typeof value === 'object' && !(value instanceof Date)) {
+        try {
+          // Try to serialize to detect circular refs
+          JSON.stringify(value);
+          cleaned[key] = cleanNodeData(value);
+        } catch (e) {
+          // Skip circular or non-serializable objects
+          console.warn(`Skipping non-serializable property: ${key}`);
+        }
+      } else {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  };
+
+  const cleanNodes = workflow.nodes?.map(node => ({
+    id: node.id,
+    type: node.type,
+    position: node.position,
+    data: cleanNodeData(node.data || {})
+  })) ?? [];
+
+  const cleanEdges = workflow.edges?.map(edge => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    animated: edge.animated
+  })) ?? [];
+
   return {
     id: workflow.id,
     name: workflow.name,
     description: workflow.description,
-    nodes: workflow.nodes ?? [],
-    edges: workflow.edges ?? [],
+    nodes: cleanNodes,
+    edges: cleanEdges,
     createdAt: workflow.createdAt,
     updatedAt: workflow.updatedAt,
     _convexId: workflow._convexId,
     _id: workflow._id,
   };
 }
-
 /* ---------------------------- main hook ---------------------------- */
 
 export function useWorkflow(workflowId?: string) {
