@@ -15,9 +15,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ workflowId: string }> }
 ) {
-  // Validate API key
+  // Validate API key (allow unauthenticated for local dev)
   const authResult = await validateApiKey(request);
-  if (!authResult.authenticated) {
+  if (!authResult.authenticated && process.env.NODE_ENV !== 'development') {
     return createUnauthorizedResponse(authResult.error || 'Authentication required');
   }
 
@@ -27,6 +27,8 @@ export async function POST(
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      console.log('🚀 Starting execution for workflow:', workflowId);
+      
       const sendEvent = (event: string, data: any) => {
         try {
           const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -138,43 +140,43 @@ export async function POST(
           executor = new LangGraphExecutor(
             workflow,
             (nodeId, result) => {
-            nodeResults[nodeId] = result;
+              nodeResults[nodeId] = result;
 
-            if (result.status === 'running') {
-              const node = workflow.nodes.find((n: any) => n.id === nodeId);
-              sendEvent('node_started', {
-                nodeId,
-                nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
-                nodeType: node?.type || 'unknown',
-                timestamp: new Date().toISOString(),
-              });
-            } else if (result.status === 'completed') {
-              const node = workflow.nodes.find((n: any) => n.id === nodeId);
-              sendEvent('node_completed', {
-                nodeId,
-                nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
-                result,
-                timestamp: new Date().toISOString(),
-              });
-            } else if (result.status === 'failed') {
-              const node = workflow.nodes.find((n: any) => n.id === nodeId);
-              sendEvent('node_failed', {
-                nodeId,
-                nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
-                error: result.error,
-                timestamp: new Date().toISOString(),
-              });
-            } else if (result.status === 'pending-authorization' || result.status === 'pending-approval') {
-              const node = workflow.nodes.find((n: any) => n.id === nodeId);
-              sendEvent('node_paused', {
-                nodeId,
-                nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
-                status: result.status,
-                timestamp: new Date().toISOString(),
-              });
-            }
-          },
-          apiKeys
+              if (result.status === 'running') {
+                const node = workflow.nodes.find((n: any) => n.id === nodeId);
+                sendEvent('node_started', {
+                  nodeId,
+                  nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
+                  nodeType: node?.type || 'unknown',
+                  timestamp: new Date().toISOString(),
+                });
+              } else if (result.status === 'completed') {
+                const node = workflow.nodes.find((n: any) => n.id === nodeId);
+                sendEvent('node_completed', {
+                  nodeId,
+                  nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
+                  result,
+                  timestamp: new Date().toISOString(),
+                });
+              } else if (result.status === 'failed') {
+                const node = workflow.nodes.find((n: any) => n.id === nodeId);
+                sendEvent('node_failed', {
+                  nodeId,
+                  nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
+                  error: result.error,
+                  timestamp: new Date().toISOString(),
+                });
+              } else if (result.status === 'pending-authorization' || result.status === 'pending-approval') {
+                const node = workflow.nodes.find((n: any) => n.id === nodeId);
+                sendEvent('node_paused', {
+                  nodeId,
+                  nodeName: node?.data?.nodeName || node?.data?.label || nodeId,
+                  status: result.status,
+                  timestamp: new Date().toISOString(),
+                });
+              }
+            },
+            apiKeys
           );
         } catch (graphBuildError) {
           console.error('❌ Failed to build LangGraph:', graphBuildError);
@@ -257,8 +259,14 @@ export async function POST(
 
         controller.close();
       } catch (error) {
+        console.error('🔥 EXECUTE-STREAM ERROR:', error);
+        console.error('🔥 Error type:', error?.constructor?.name);
+        console.error('🔥 Error message:', error instanceof Error ? error.message : 'Unknown');
+        console.error('🔥 Error stack:', error instanceof Error ? error.stack : 'No stack');
+        
         sendEvent('error', {
           error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
           timestamp: new Date().toISOString(),
         });
         controller.close();

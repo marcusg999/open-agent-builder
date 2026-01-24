@@ -1,5 +1,13 @@
 import { WorkflowNode, WorkflowState } from '../types';
-import CodeInterpreter from '@e2b/code-interpreter';
+// Lazy load E2B to avoid ESM issues
+let CodeInterpreter: any = null;
+
+async function getCodeInterpreter() {
+  if (!CodeInterpreter) {
+    CodeInterpreter = (await import('@e2b/code-interpreter')).default;
+  }
+  return CodeInterpreter;
+}
 
 /**
  * Execute Data Nodes - Transform, Set State
@@ -100,8 +108,9 @@ async function executeTransformE2B(transformScript: string, state: WorkflowState
     variables: JSON.parse(JSON.stringify(state.variables))
   };
 
-  // Create E2B sandbox
-  const sandbox = await CodeInterpreter.create({
+  // Create E2B sandbox with dynamic import
+  const CodeInterpreterClass = await getCodeInterpreter();
+  const sandbox = await CodeInterpreterClass.create({
     apiKey: process.env.E2B_API_KEY,
   });
 
