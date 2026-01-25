@@ -21,6 +21,7 @@ import { executeToolsNode } from './executors/tools';
 import { executeHTTPNode } from './executors/http';
 import { executeExtractNode } from './executors/extract';
 import { executeArcadeNode } from './executors/arcade';
+import { executeImageGenNode } from './executors/image-gen';
 import { createOrUpdateArcadeAuthRecord } from '../arcade/auth-store';
 
 interface ArcadePendingResponse {
@@ -90,7 +91,7 @@ export const WorkflowStateAnnotation = Annotation.Root({
 export class LangGraphExecutor {
   private workflow: Workflow;
   private graph: any; // Compiled StateGraph
-  private apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string };
+  private apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string; replicate?: string };
   private onNodeUpdate?: (nodeId: string, result: NodeExecutionResult) => void;
   private checkpointer: MemorySaver;
   private parallelNodeIds = new Set<string>();
@@ -103,7 +104,7 @@ export class LangGraphExecutor {
   constructor(
     workflow: Workflow,
     onNodeUpdate?: (nodeId: string, result: NodeExecutionResult) => void,
-    apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string }
+    apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string; replicate?: string }
   ) {
     
     this.workflow = workflow;
@@ -485,10 +486,9 @@ export class LangGraphExecutor {
     const data = node.data as any;
 
     switch (nodeType) {
-      case 'start':
+      case 'start': {
         // Return the input object properly without spreading strings
         const input = state.variables.input;
-
         // If input is a JSON string, parse it
         let parsedInput = input;
         if (typeof input === 'string') {
@@ -504,6 +504,10 @@ export class LangGraphExecutor {
           message: 'Workflow started',
           ...(typeof parsedInput === 'object' && parsedInput !== null ? parsedInput : { input: parsedInput })
         };
+      }
+
+      case 'image-gen':
+        return await executeImageGenNode(node, state, this.apiKeys);
 
       case 'agent': {
         // Use the proper executeAgentNode which handles MCP tools
@@ -541,6 +545,11 @@ export class LangGraphExecutor {
         }
 
         return { error: 'MCP server not implemented' };
+      }
+
+      case 'passthrough': {
+        // Passthrough node - just pass data through unchanged
+        return state.variables.lastOutput;
       }
 
       case 'transform':
@@ -1028,6 +1037,12 @@ export class LangGraphExecutor {
 
       case 'mcp':
         return await executeMCPNode(node, state, this.apiKeys?.firecrawl);
+
+      case 'image-gen':
+        return await executeImageGenNode(node, state, this.apiKeys);
+
+      case 'passthrough':
+        return state.variables.lastOutput;
 
       case 'if-else':
       case 'if / else':
