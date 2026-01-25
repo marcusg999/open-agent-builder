@@ -66,6 +66,42 @@ async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
 }
 
 /**
+ * Helper: Extract prompts from markdown code blocks
+ */
+function extractPromptsFromMarkdown(text: string): Array<{ shotNumber?: number; prompt: string; aspectRatio?: string; style?: string }> {
+  console.log('Parsing markdown for code block prompts...');
+  
+  const prompts: Array<{ shotNumber?: number; prompt: string; aspectRatio?: string; style?: string }> = [];
+  
+  // Match all code blocks with ```
+  const codeBlockRegex = /```\n([\s\S]*?)\n```/g;
+  let match;
+  let shotNumber = 1;
+  
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const blockContent = match[1].trim();
+    
+    // Skip blocks that are just technical specs or negative prompts
+    if (blockContent.toLowerCase().includes('negative prompt:') || 
+        blockContent.toLowerCase().includes('technical specifications') ||
+        blockContent.length < 50) {
+      continue;
+    }
+    
+    // This is likely an image generation prompt
+    prompts.push({
+      shotNumber: shotNumber++,
+      prompt: blockContent,
+      aspectRatio: '4:3',
+      style: 'cinematic',
+    });
+  }
+  
+  console.log(`Found ${prompts.length} prompts in markdown code blocks`);
+  return prompts;
+}
+
+/**
  * Helper: Extract prompts from various input formats
  */
 function extractPrompts(lastOutput: any): Array<{ shotNumber?: number; prompt: string; aspectRatio?: string; style?: string }> {
@@ -123,9 +159,20 @@ function extractPrompts(lastOutput: any): Array<{ shotNumber?: number; prompt: s
     }
   }
 
-  // Case 4: String (single prompt)
+  // Case 4: String with markdown code blocks (Visual Generator markdown output)
   if (typeof lastOutput === 'string') {
-    console.log('Input is string, using as single prompt');
+    console.log('Input is string, checking for markdown prompts...');
+    
+    // Try to extract from markdown code blocks first
+    if (lastOutput.includes('```')) {
+      const markdownPrompts = extractPromptsFromMarkdown(lastOutput);
+      if (markdownPrompts.length > 0) {
+        return markdownPrompts;
+      }
+    }
+    
+    // Fallback: use entire string as single prompt
+    console.log('No markdown blocks found, using entire string as single prompt');
     return [{
       shotNumber: 1,
       prompt: lastOutput,
