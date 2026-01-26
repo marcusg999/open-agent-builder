@@ -6,7 +6,13 @@
       "Bash(npx next lint)",
       "Bash(npx next lint:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.dev.runwayml.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm install:*)"
     ]
   }
 }
