@@ -33,10 +33,10 @@ export default function TestEndpointPanel({ workflowId, workflow, environment, o
 
   // Get input variables from the workflow's start node
   const startNode = workflow?.nodes.find(n => (n.data as any)?.nodeType === 'start');
-  const inputVariables = (startNode?.data as any)?.inputVariables || [];
 
   // Generate default payload from input variables
   const defaultPayload = useMemo(() => {
+    const inputVariables = (startNode?.data as any)?.inputVariables || [];
     if (inputVariables.length === 0) {
       return { input: "https://firecrawl.dev" };
     }
@@ -44,7 +44,7 @@ export default function TestEndpointPanel({ workflowId, workflow, environment, o
       acc[v.name] = v.defaultValue || '';
       return acc;
     }, {});
-  }, [inputVariables]);
+  }, [startNode?.data]);
 
   const [input, setInput] = useState(JSON.stringify(defaultPayload, null, 2));
   const [response, setResponse] = useState<any>(null);

@@ -68,6 +68,8 @@ export default function LivePreviewFrame({
         clearTimeout(idleMoveTimerRef.current);
       }
     };
+    // scheduleNextIdleMove is intentionally excluded - it's defined in render scope
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isIdle]);
 
   // Main Animation effect (runs continuously)
@@ -124,6 +126,8 @@ export default function LivePreviewFrame({
         clearTimeout(idleStartTimerRef.current);
       }
     };
+    // isIdle is read but not tracked as dependency - intentional to avoid re-triggering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetPosition]); // Re-run main loop logic if targetPosition changes
 
   const cleanupConnection = () => {
@@ -291,6 +295,8 @@ export default function LivePreviewFrame({
         cleanupConnection();
       };
     }
+    // connect is defined in component scope and depends on sessionId already in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]); // Re-run effect when sessionId changes
 
   return (
@@ -324,10 +330,12 @@ export default function LivePreviewFrame({
         </div>
       ) : null}
 
-      {/* Preview image */}
+      {/* Preview image - using native img for dynamic WebSocket-streamed content */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         id="live-frame"
+        alt="Live preview frame"
         onLoad={() => {
           setImageLoaded(true);
           if (onScrapeComplete) onScrapeComplete();

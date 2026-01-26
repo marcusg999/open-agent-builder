@@ -273,6 +273,8 @@ export const MenuContent = React.forwardRef<HTMLDivElement, MenuContentProps>(
           }));
         }
       }
+      // triggerRef is stable and doesn't need to be a dependency
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, position, align, side, alignOffset]);
 
     return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Workflow, WorkflowExecution, NodeExecutionResult, WorkflowPendingAuth } from "@/lib/workflow/types";
 import { toast } from "sonner";
 import {
@@ -167,7 +167,9 @@ export default function ExecutionPanel({
   }, [pendingAuth?.authId]);
   // Get input variables from Start node
   const startNode = workflow?.nodes.find(n => (n.data as any)?.nodeType === 'start');
-  const inputVariables = (startNode?.data as any)?.inputVariables || [];
+  const inputVariables = useMemo(() => {
+    return (startNode?.data as any)?.inputVariables || [];
+  }, [startNode?.data]);
 
   console.log('ExecutionPanel - Start node:', startNode);
   console.log('ExecutionPanel - Input variables:', inputVariables);

@@ -55,6 +55,8 @@ export default function SubtleAsciiAnimation({
     return () => {
       cleanup?.();
     };
+    // asciiFrames is a constant defined inside the component
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
