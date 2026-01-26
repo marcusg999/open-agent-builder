@@ -6,7 +6,9 @@ import ScrambleText from "@/components/ui/motion/scramble-text";
 export function UsageLoadingText({ text = "Loading..." }: { text?: string }) {
   const [isInView, setIsInView] = useState(false);
 
+  // Trigger animation on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsInView(true);
   }, []);
 

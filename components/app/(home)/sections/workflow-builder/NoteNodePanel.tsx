@@ -27,6 +27,7 @@ export default function NoteNodePanel({ node, onClose, onDelete, onUpdate }: Not
     }, 500);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteText]);
 
 
@@ -94,7 +95,7 @@ export default function NoteNodePanel({ node, onClose, onDelete, onUpdate }: Not
               />
               <div className="mt-12 p-12 bg-heat-4 border border-heat-100 rounded-8">
                 <p className="text-xs text-heat-100 leading-relaxed">
-                  <strong>Sticky notes are visual-only.</strong> They don't execute or connect to other nodes.
+                  <strong>Sticky notes are visual-only.</strong> They don&apos;t execute or connect to other nodes.
                   Use them to document your workflow, explain logic, or leave reminders.
                 </p>
               </div>

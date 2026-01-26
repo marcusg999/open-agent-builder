@@ -66,7 +66,7 @@ export default function UniversalOutputSelector({
           Output Format
         </label>
         <p className="text-body-small text-black-alpha-48 mb-10">
-          Choose how downstream nodes access this node's output
+          Choose how downstream nodes access this node&apos;s output
         </p>
 
         <div className="space-y-8">

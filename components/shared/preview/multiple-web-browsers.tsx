@@ -1,9 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import WebBrowser from "./web-browser";
-
-let interval: NodeJS.Timeout;
 
 type BrowserData = {
   id: number;
@@ -28,23 +26,28 @@ export default function MultipleWebBrowsers({
   const CARD_OFFSET = offset || 10;
   const SCALE_FACTOR = scaleFactor || 0.06;
   const [activeBrowsers, setActiveBrowsers] = useState<BrowserData[]>(browsers);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (autoRotate) {
-      startRotation();
-    }
-    return () => clearInterval(interval);
-  }, [autoRotate, rotationInterval]);
-
-  const startRotation = () => {
-    interval = setInterval(() => {
+  const startRotation = useCallback(() => {
+    intervalRef.current = setInterval(() => {
       setActiveBrowsers((prevBrowsers: BrowserData[]) => {
         const newArray = [...prevBrowsers];
         newArray.unshift(newArray.pop()!); // move the last element to the front
         return newArray;
       });
     }, rotationInterval);
-  };
+  }, [rotationInterval]);
+
+  useEffect(() => {
+    if (autoRotate) {
+      startRotation();
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [autoRotate, startRotation]);
 
   return (
     <div className="relative h-[600px] w-full">

@@ -66,6 +66,8 @@ return result;`,
     stateKey,
     stateValue,
     valueType,
+    node?.id,
+    onUpdate,
   ]);
 
 
@@ -247,7 +249,7 @@ return result;`,
                     Set global variables
                   </h3>
                   <p className="text-sm text-black-alpha-48 mb-16">
-                    Assign values to workflow's state variables
+                    Assign values to workflow&apos;s state variables
                   </p>
 
                   {/* State Assignments */}

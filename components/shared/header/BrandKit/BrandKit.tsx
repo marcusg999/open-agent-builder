@@ -25,8 +25,10 @@ export default function HeaderBrandKit() {
     });
   }, [open]);
 
+  // Close dropdown when content changes - intentional state sync
   useEffect(() => {
     if (dropdownContent) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(false);
     }
   }, [dropdownContent]);

@@ -1,4 +1,3 @@
-/* eslint-disable @stylistic/array-element-newline */
 "use client";
 
 import initCanvas from "@/utils/init-canvas";

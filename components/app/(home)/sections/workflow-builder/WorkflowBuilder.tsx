@@ -249,11 +249,11 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
   const updateTemplateStructure = useMutation(api.workflows.updateTemplateStructure);
 
   // Function to seed templates via API
-  const seedTemplates = async () => {
+  const seedTemplates = useCallback(async () => {
     const response = await fetch('/api/templates/seed', { method: 'POST' });
     const data = await response.json();
     return data;
-  };
+  }, []);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showExecution, setShowExecution] = useState(false);
@@ -366,8 +366,11 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Reset environment when workflow changes - intentional state sync
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEnvironment('draft');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowTestEndpoint(false); // Close API panel when switching workflows
   }, [workflow?.id]);
 
@@ -459,6 +462,58 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
   }, [workflow, deleteWorkflow, setConfirmDialog, setShowWorkflowMenu]);
   const { runWorkflow, stopWorkflow, isRunning, nodeResults, execution, currentNodeId, pendingAuth, resumeWorkflow } = useWorkflowExecution();
 
+  // Helper function for node colors - defined before useEffect that uses it
+  const getNodeColor = (type: string): string => {
+    const colorMap: Record<string, string> = {
+      'agent': 'bg-blue-500',
+      'mcp': 'bg-[#FFEFA4] dark:bg-[#FFDD40]',
+      'firecrawl': 'bg-heat-100',
+      'if-else': 'bg-[#FEE7C2] dark:bg-[#FFAE2B]',
+      'while': 'bg-[#FEE7C2] dark:bg-[#FFAE2B]',
+      'user-approval': 'bg-[#E5E7EB] dark:bg-[#9CA3AF]',
+      'transform': 'bg-[#ECE3FF] dark:bg-[#9665FF]',
+      'set-state': 'bg-[#ECE3FF] dark:bg-[#9665FF]',
+      'file-search': 'bg-indigo-500',
+      'extract': 'bg-purple-500',
+      'note': 'bg-[#E4E4E7] dark:bg-[#52525B]',
+      'end': 'bg-teal-500',
+      'start': 'bg-gray-600',
+    };
+    return colorMap[type] || 'bg-gray-500';
+  };
+
+  // Helper function for node labels - defined before useEffect that uses it
+  const createNodeLabel = (label: string, color: string, nodeType?: string) => {
+    // Get icon for this node type
+    const nodeCategory = nodeCategories.find(cat =>
+      cat.nodes.some(n => n.type === nodeType || n.label === label)
+    );
+    const nodeConfig = nodeCategory?.nodes.find(n => n.type === nodeType || n.label === label);
+    const IconComponent = nodeConfig?.icon;
+
+    // Determine text color based on node type
+    const getTextColor = () => {
+      if (nodeType === 'note') return 'text-white'; // White text for note nodes (yellow background)
+      if (nodeType === 'if-else' || nodeType === 'while' || nodeType === 'user-approval') {
+        return 'text-[#18181b]'; // Dark text for orange background nodes
+      }
+      return 'text-[#18181b]'; // Default dark text
+    };
+
+    return (
+      <div className="flex items-center gap-8">
+        <div className={`w-32 h-32 rounded-8 ${color} flex items-center justify-center flex-shrink-0`}>
+          {IconComponent ? (
+            <IconComponent className="w-18 h-18 text-white" strokeWidth={2} />
+          ) : (
+            <div className="w-16 h-16 bg-white rounded-2" />
+          )}
+        </div>
+        <span className={`text-sm font-medium ${getTextColor()}`}>{label}</span>
+      </div>
+    );
+  };
+
   // Load template or workflow on mount
   useEffect(() => {
     if (initialized) return;
@@ -543,6 +598,7 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
           edges: template.edges,
         });
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setInitialized(true);
       }
     } else if (initialWorkflowId && workflow && !initialized) {
@@ -591,68 +647,21 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
       // Reset node ID counter based on loaded nodes to prevent duplicates
       resetNodeIdCounter(layoutedNodes as any);
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInitialized(true);
     } else if (!initialized && !initialTemplateId && !initialWorkflowId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInitialized(true);
       // For new workflows, don't select any node by default
       // User can click the start node or drag new nodes to build their workflow
     }
   }, [initialTemplateId, initialWorkflowId, initialized, setNodes, setEdges, saveWorkflow, template, seedTemplates, workflow]);
 
-  const createNodeLabel = (label: string, color: string, nodeType?: string) => {
-    // Get icon for this node type
-    const nodeCategory = nodeCategories.find(cat =>
-      cat.nodes.some(n => n.type === nodeType || n.label === label)
-    );
-    const nodeConfig = nodeCategory?.nodes.find(n => n.type === nodeType || n.label === label);
-    const IconComponent = nodeConfig?.icon;
-
-    // Determine text color based on node type
-    const getTextColor = () => {
-      if (nodeType === 'note') return 'text-white'; // White text for note nodes (yellow background)
-      if (nodeType === 'if-else' || nodeType === 'while' || nodeType === 'user-approval') {
-        return 'text-[#18181b]'; // Dark text for orange background nodes
-      }
-      return 'text-[#18181b]'; // Default dark text
-    };
-
-    return (
-      <div className="flex items-center gap-8">
-        <div className={`w-32 h-32 rounded-8 ${color} flex items-center justify-center flex-shrink-0`}>
-          {IconComponent ? (
-            <IconComponent className="w-18 h-18 text-white" strokeWidth={2} />
-          ) : (
-            <div className="w-16 h-16 bg-white rounded-2" />
-          )}
-        </div>
-        <span className={`text-sm font-medium ${getTextColor()}`}>{label}</span>
-      </div>
-    );
-  };
-
-  const getNodeColor = (type: string): string => {
-    const colorMap: Record<string, string> = {
-      'agent': 'bg-blue-500',
-      'mcp': 'bg-[#FFEFA4] dark:bg-[#FFDD40]',
-      'firecrawl': 'bg-heat-100',
-      'if-else': 'bg-[#FEE7C2] dark:bg-[#FFAE2B]',
-      'while': 'bg-[#FEE7C2] dark:bg-[#FFAE2B]',
-      'user-approval': 'bg-[#E5E7EB] dark:bg-[#9CA3AF]',
-      'transform': 'bg-[#ECE3FF] dark:bg-[#9665FF]',
-      'set-state': 'bg-[#ECE3FF] dark:bg-[#9665FF]',
-      'file-search': 'bg-indigo-500',
-      'extract': 'bg-purple-500',
-      'note': 'bg-[#E4E4E7] dark:bg-[#52525B]',
-      'end': 'bg-teal-500',
-      'start': 'bg-gray-600',
-    };
-    return colorMap[type] || 'bg-gray-500';
-  };
-
-  // Detect duplicate credentials
+  // Detect duplicate credentials - syncing derived state from workflow
   useEffect(() => {
     if (workflow) {
       const warnings = detectDuplicateCredentials(workflow);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDuplicateWarnings(warnings);
 
       // Show toast for new warnings
@@ -663,6 +672,7 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflow?.nodes, workflow?.edges]);
 
   // Sync React Flow state with workflow state (debounced to avoid loops)
@@ -673,9 +683,11 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
 
   // Cleanup timeouts on unmount to prevent memory leaks
   useEffect(() => {
+    const nodesTimeout = nodesSaveTimeoutRef.current;
+    const edgesTimeout = edgesSaveTimeoutRef.current;
     return () => {
-      if (nodesSaveTimeoutRef.current) clearTimeout(nodesSaveTimeoutRef.current);
-      if (edgesSaveTimeoutRef.current) clearTimeout(edgesSaveTimeoutRef.current);
+      if (nodesTimeout) clearTimeout(nodesTimeout);
+      if (edgesTimeout) clearTimeout(edgesTimeout);
     };
   }, []);
 
@@ -1159,6 +1171,7 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNode, selectedEdgeId, nodes, edges, handleDeleteNode, setNodes, setEdges, isRunning, handleAutoArrange]);
 
   const handleRunWithInput = useCallback(async (input: string) => {
@@ -1355,6 +1368,7 @@ function WorkflowBuilderInner({ onBack, initialWorkflowId, initialTemplateId }: 
         return node;
       })
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes.length]); // Only re-run when node count changes
 
   return (

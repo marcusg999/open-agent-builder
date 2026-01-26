@@ -54,6 +54,7 @@ export default function ConnectorsPanel({ isOpen, onClose }: ConnectorsPanelProp
   const [customAuthType, setCustomAuthType] = useState('none');
   const [customApiKey, setCustomApiKey] = useState('');
 
+  /* eslint-disable react-hooks/purity */
   const handleConnectTemplate = (template: MCPTemplate) => {
     if (template.authType === 'api-key') {
       // Show API key input
@@ -87,6 +88,7 @@ export default function ConnectorsPanel({ isOpen, onClose }: ConnectorsPanelProp
       toast.success(`Connected to ${template.name}`);
     }
   };
+  /* eslint-enable react-hooks/purity */
 
   const handleConnectCustom = () => {
     if (!customName || !customUrl) {

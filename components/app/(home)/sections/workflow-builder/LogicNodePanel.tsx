@@ -112,7 +112,7 @@ export default function LogicNodePanel({ node, nodes, onClose, onDelete, onUpdat
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [name, condition, whileCondition, maxIterations, approvalMessage, timeoutMinutes]);
+  }, [name, condition, whileCondition, maxIterations, approvalMessage, timeoutMinutes, node?.id, onUpdate]);
 
   const availableVars = getAvailableVariables();
 
@@ -266,7 +266,7 @@ export default function LogicNodePanel({ node, nodes, onClose, onDelete, onUpdat
                       onClick={() => setCondition('input.status === "approved"')}
                       className="text-left px-12 py-8 bg-accent-white hover:bg-heat-4 border border-border-faint rounded-6 transition-colors"
                     >
-                      <p className="text-xs font-mono text-heat-100">input.status === "approved"</p>
+                      <p className="text-xs font-mono text-heat-100">input.status === &quot;approved&quot;</p>
                       <p className="text-xs text-black-alpha-48 mt-2">String equals</p>
                     </button>
                     <button
@@ -294,7 +294,7 @@ export default function LogicNodePanel({ node, nodes, onClose, onDelete, onUpdat
                       onClick={() => setCondition('lastOutput.tags && lastOutput.tags.includes("urgent")')}
                       className="text-left px-12 py-8 bg-accent-white hover:bg-heat-4 border border-border-faint rounded-6 transition-colors"
                     >
-                      <p className="text-xs font-mono text-heat-100">tags.includes("urgent")</p>
+                      <p className="text-xs font-mono text-heat-100">tags.includes(&quot;urgent&quot;)</p>
                       <p className="text-xs text-black-alpha-48 mt-2">Array contains</p>
                     </button>
                   </div>
@@ -453,7 +453,7 @@ export default function LogicNodePanel({ node, nodes, onClose, onDelete, onUpdat
 
                 <div className="p-16 bg-heat-4 rounded-12 border border-heat-100">
                   <p className="text-body-small text-accent-black">
-                    <strong>Loop Setup:</strong> Connect loop body nodes using the "continue" handle. The workflow will repeat until the condition is false or max iterations reached.
+                    <strong>Loop Setup:</strong> Connect loop body nodes using the &quot;continue&quot; handle. The workflow will repeat until the condition is false or max iterations reached.
                   </p>
                 </div>
               </>
@@ -566,7 +566,7 @@ export default function LogicNodePanel({ node, nodes, onClose, onDelete, onUpdat
                       onClick={() => setApprovalMessage('Review ${input.user}\'s request: ${lastOutput.summary}')}
                       className="text-left px-12 py-8 bg-accent-white hover:bg-heat-4 border border-border-faint rounded-6 transition-colors"
                     >
-                      <p className="text-xs font-mono text-heat-100">Review ${'{input.user}'}'s request: ${'{lastOutput.summary}'}</p>
+                      <p className="text-xs font-mono text-heat-100">Review ${'{input.user}'}&apos;s request: ${'{lastOutput.summary}'}</p>
                       <p className="text-xs text-black-alpha-48 mt-2">User action approval</p>
                     </button>
                     <button
@@ -597,7 +597,7 @@ export default function LogicNodePanel({ node, nodes, onClose, onDelete, onUpdat
                 <div className="p-16 bg-heat-4 rounded-12 border border-heat-100">
                   <h3 className="text-label-small text-accent-black mb-8">How it works</h3>
                   <p className="text-body-small text-heat-100 mb-12">
-                    The workflow will pause at this node and notify the user with your approval message. Execution continues down the "Approve" branch when approved, or the "Reject" branch when rejected or timed out.
+                    The workflow will pause at this node and notify the user with your approval message. Execution continues down the &quot;Approve&quot; branch when approved, or the &quot;Reject&quot; branch when rejected or timed out.
                   </p>
                   <div className="flex gap-8 text-xs">
                     <div className="flex items-center gap-4">

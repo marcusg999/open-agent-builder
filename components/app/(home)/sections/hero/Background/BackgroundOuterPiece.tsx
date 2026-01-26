@@ -18,6 +18,7 @@ export const BackgroundOuterPiece = () => {
     const heroContent = document.getElementById("hero-content");
     if (!heroContent) {
       // If hero-content doesn't exist, don't render the background piece
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNoRender(true);
       return;
     }

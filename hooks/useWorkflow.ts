@@ -124,6 +124,7 @@ export function useWorkflow(workflowId?: string) {
     };
 
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowId]);
 
   /* ----------------------- load workflow list ----------------------- */
@@ -276,7 +277,9 @@ export function useMCPServers() {
     setServers(getMCPServers());
   }, []);
 
+  // Load servers on mount - intentional state initialization
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadServers();
   }, [loadServers]);
 

@@ -61,24 +61,24 @@ export function CustomNode({ data, selected }: NodeProps) {
     }
   }, [noteText, isNoteNode]);
 
+  // Focus textarea when editing note
+  React.useEffect(() => {
+    if (isNoteNode && isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, [isEditing, isNoteNode]);
+
+  const handleNoteSave = () => {
+    setIsEditing(false);
+    // Update the node data
+    if ((data as any).onUpdate) {
+      (data as any).onUpdate({ noteText: editText });
+    }
+  };
+
   // Note nodes are visual-only sticky notes with inline editing
   if (isNoteNode) {
-
-    React.useEffect(() => {
-      if (isEditing && textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.select();
-      }
-    }, [isEditing]);
-
-    const handleSave = () => {
-      setIsEditing(false);
-      // Update the node data
-      if ((data as any).onUpdate) {
-        (data as any).onUpdate({ noteText: editText });
-      }
-    };
-
     return (
       <div
         className="relative"
@@ -126,7 +126,7 @@ export function CustomNode({ data, selected }: NodeProps) {
             ref={textareaRef}
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
-            onBlur={handleSave}
+            onBlur={handleNoteSave}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 setEditText(noteText);
@@ -134,7 +134,7 @@ export function CustomNode({ data, selected }: NodeProps) {
               }
               // Save on Ctrl/Cmd+Enter
               if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                handleSave();
+                handleNoteSave();
               }
               // Don't propagate to prevent ReactFlow shortcuts
               e.stopPropagation();

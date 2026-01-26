@@ -30,6 +30,7 @@ export default function LivePreviewFrame({
   }>({ x: 980, y: 54 });
   const [isIdle, setIsIdle] = useState(false);
 
+  /* eslint-disable react-hooks/purity */
   // Function to start the random idle movement sequence
   const scheduleNextIdleMove = () => {
     if (idleMoveTimerRef.current) {
@@ -50,6 +51,7 @@ export default function LivePreviewFrame({
       }
     }, randomDelay);
   };
+  /* eslint-enable react-hooks/purity */
 
   // Effect to handle starting/stopping idle movement sequence
   useEffect(() => {

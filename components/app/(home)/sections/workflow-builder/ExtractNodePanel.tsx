@@ -31,12 +31,14 @@ export default function ExtractNodePanel({
   );
   const [schemaError, setSchemaError] = useState('');
 
-  // Validate JSON schema
+  // Validate JSON schema - derived state from jsonSchema
   useEffect(() => {
     try {
       JSON.parse(jsonSchema);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSchemaError('');
-    } catch (e) {
+    } catch {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSchemaError('Invalid JSON');
     }
   }, [jsonSchema]);

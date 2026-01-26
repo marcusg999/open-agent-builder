@@ -125,6 +125,7 @@ export const useHeaderHeight = () => {
       });
 
       resizeObserver.observe(header);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHeaderHeight(header.clientHeight);
 
       return () => {

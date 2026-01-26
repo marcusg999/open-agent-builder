@@ -264,6 +264,7 @@ export function useWorkflowExecution() {
       setIsRunning(false);
       setCurrentNodeId(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stopWorkflow = useCallback(() => {

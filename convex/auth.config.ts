@@ -5,7 +5,7 @@
  * The CLERK_JWT_ISSUER_DOMAIN is set via: npx convex env set
  */
 
-export default {
+const authConfig = {
   providers: [
     {
       domain: "https://closing-sculpin-49.clerk.accounts.dev", // Your Clerk issuer URL
@@ -13,3 +13,5 @@ export default {
     },
   ],
 };
+
+export default authConfig;

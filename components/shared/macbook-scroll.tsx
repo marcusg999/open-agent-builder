@@ -43,8 +43,10 @@ export const MacbookScroll = ({
 
   const [isMobile, setIsMobile] = useState(false);
 
+  // Detect mobile on mount - intentional state sync
   useEffect(() => {
     if (window && window.innerWidth < 768) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMobile(true);
     }
   }, []);

@@ -245,7 +245,7 @@ export default function PasteConfigModal({ isOpen, onClose, onSave }: PasteConfi
                   <br />Connections will be tested automatically after import.
                 </p>
                 <p className="text-xs text-black-alpha-48">
-                  💡 Tip: Copy your MCP config from your editor's settings.json file
+                  💡 Tip: Copy your MCP config from your editor&apos;s settings.json file
                 </p>
               </div>
             </div>

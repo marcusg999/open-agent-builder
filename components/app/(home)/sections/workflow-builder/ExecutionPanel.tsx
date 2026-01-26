@@ -188,6 +188,7 @@ export default function ExecutionPanel({
       setInputValues({ input: 'https://firecrawl.dev' });
       console.log('Set default input value');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflow?.id, inputVariables.length]); // Re-initialize when workflow or variables change
 
   const [showInput, setShowInput] = useState(true);

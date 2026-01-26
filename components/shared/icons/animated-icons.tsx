@@ -39,7 +39,7 @@ const pathVariants: Variants = {
 
 // Higher-order component for icon animation
 const withIconAnimation = (IconComponent: React.ComponentType<any>) => {
-  return ({
+  const AnimatedIcon = ({
     isHovered = false,
     className,
     ...props
@@ -63,11 +63,13 @@ const withIconAnimation = (IconComponent: React.ComponentType<any>) => {
       </div>
     );
   };
+  AnimatedIcon.displayName = `AnimatedIcon(${IconComponent.displayName || IconComponent.name || 'Component'})`;
+  return AnimatedIcon;
 };
 
 // Higher-order component for icon animation
 const withChartIconAnimation = (IconComponent: React.ComponentType<any>) => {
-  return ({
+  const AnimatedChartIcon = ({
     isHovered = false,
     className,
     ...props
@@ -96,7 +98,8 @@ const withChartIconAnimation = (IconComponent: React.ComponentType<any>) => {
       } else {
         handleHoverEnd();
       }
-    }, [isHovered, handleHoverStart]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isHovered]);
 
     const handleHoverEnd = () => {
       controls.start("normal");
@@ -113,6 +116,8 @@ const withChartIconAnimation = (IconComponent: React.ComponentType<any>) => {
       </div>
     );
   };
+  AnimatedChartIcon.displayName = `AnimatedChartIcon(${IconComponent.displayName || IconComponent.name || 'Component'})`;
+  return AnimatedChartIcon;
 };
 
 // Base icon components

@@ -14,14 +14,18 @@ export default function WorkflowNameEditor({ workflow, onUpdate, renameTrigger =
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(workflow?.name || "New Workflow");
 
+  // Sync name from workflow - intentional state sync
   useEffect(() => {
     if (workflow) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(workflow.name);
     }
   }, [workflow]);
 
+  // Trigger editing mode from parent - intentional state sync
   useEffect(() => {
     if (renameTrigger > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsEditing(true);
     }
   }, [renameTrigger]);

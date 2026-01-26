@@ -71,7 +71,7 @@ export default function NodeArgumentsPanel({ nodeId, currentArgs, onUpdate }: No
       {arguments_.length === 0 ? (
         <div className="p-16 bg-background-base rounded-8 border border-border-faint text-center">
           <p className="text-body-small text-black-alpha-48">
-            No arguments defined. Click "Add Argument" to get started.
+            No arguments defined. Click &quot;Add Argument&quot; to get started.
           </p>
         </div>
       ) : (

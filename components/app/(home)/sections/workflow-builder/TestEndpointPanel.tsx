@@ -44,7 +44,7 @@ export default function TestEndpointPanel({ workflowId, workflow, environment, o
       acc[v.name] = v.defaultValue || '';
       return acc;
     }, {});
-  }, [inputVariables, workflow?.id]);
+  }, [inputVariables]);
 
   const [input, setInput] = useState(JSON.stringify(defaultPayload, null, 2));
   const [response, setResponse] = useState<any>(null);

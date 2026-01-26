@@ -78,7 +78,7 @@ export default function OutputSchemaPanel({ nodeId, currentSchema, onUpdate }: O
       {schema.length === 0 ? (
         <div className="p-16 bg-background-base rounded-8 border border-border-faint text-center">
           <p className="text-body-small text-black-alpha-48">
-            Define the shape of this node's output
+            Define the shape of this node&apos;s output
           </p>
         </div>
       ) : (

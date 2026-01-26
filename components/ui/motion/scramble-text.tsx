@@ -22,6 +22,7 @@ export default function ScrambleText({
 
   // Set client-side flag after mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
   }, []);
 
@@ -36,6 +37,7 @@ export default function ScrambleText({
       containerRef.current.style.display = "inline-block";
       containerRef.current.style.visibility = "visible";
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
   // Start animation only on client after initial render
@@ -43,6 +45,7 @@ export default function ScrambleText({
     if (!isClient || !isInView || hasAnimated) return;
 
     // Set initial scrambled text
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayText(
       Array(text.length)
         .fill(0)

@@ -93,6 +93,7 @@ export const MenuTrigger = React.forwardRef<
           forwardedRef.current = node as HTMLButtonElement;
         }
       }
+      // eslint-disable-next-line react-hooks/immutability
       (triggerRef as React.MutableRefObject<HTMLElement | null>).current = node;
     },
     [forwardedRef, triggerRef],

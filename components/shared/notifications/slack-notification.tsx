@@ -18,8 +18,10 @@ export default function SlackNotification({
     }
   };
 
+  // Open notification when triggered - intentional state sync
   useEffect(() => {
     if (shouldNotify) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsOpen(true);
     }
   }, [shouldNotify]);

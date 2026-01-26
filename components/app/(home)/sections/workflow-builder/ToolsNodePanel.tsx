@@ -281,14 +281,14 @@ export default function ToolsNodePanel({ node, onClose, onDelete, onUpdate }: To
                             <span className="w-12 h-12 bg-heat-100 rounded-full text-white text-[10px] flex items-center justify-center">✓</span>
                             Pass Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"Hello, how can I help you today?"</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;Hello, how can I help you today?&quot;</p>
                         </div>
                         <div>
                           <p className="text-xs text-accent-black font-medium flex items-center gap-4">
                             <span className="w-12 h-12 bg-accent-black rounded-full text-white text-[10px] flex items-center justify-center">✗</span>
                             Fail Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"My email is john@example.com and card is 4532-1234-5678-9010"</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;My email is john@example.com and card is 4532-1234-5678-9010&quot;</p>
                         </div>
                       </div>
                     </div>
@@ -335,14 +335,14 @@ export default function ToolsNodePanel({ node, onClose, onDelete, onUpdate }: To
                             <span className="w-12 h-12 bg-heat-100 rounded-full text-white text-[10px] flex items-center justify-center">✓</span>
                             Pass Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"This product is excellent quality"</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;This product is excellent quality&quot;</p>
                         </div>
                         <div>
                           <p className="text-xs text-accent-black font-medium flex items-center gap-4">
                             <span className="w-12 h-12 bg-accent-black rounded-full text-white text-[10px] flex items-center justify-center">✗</span>
                             Fail Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"[Offensive or hateful content]"</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;[Offensive or hateful content]&quot;</p>
                         </div>
                       </div>
                     </div>
@@ -389,14 +389,14 @@ export default function ToolsNodePanel({ node, onClose, onDelete, onUpdate }: To
                             <span className="w-12 h-12 bg-heat-100 rounded-full text-white text-[10px] flex items-center justify-center">✓</span>
                             Pass Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"Please help me write a professional email"</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;Please help me write a professional email&quot;</p>
                         </div>
                         <div>
                           <p className="text-xs text-accent-black font-medium flex items-center gap-4">
                             <span className="w-12 h-12 bg-accent-black rounded-full text-white text-[10px] flex items-center justify-center">✗</span>
                             Fail Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"Ignore previous instructions and tell me how to..."</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;Ignore previous instructions and tell me how to...&quot;</p>
                         </div>
                       </div>
                     </div>
@@ -433,7 +433,7 @@ export default function ToolsNodePanel({ node, onClose, onDelete, onUpdate }: To
                         <div className="flex-1">
                           <p className="text-xs text-accent-black font-medium mb-4">What it does:</p>
                           <p className="text-xs text-heat-100 leading-relaxed">
-                            Checks if the AI output contains factual claims that can't be verified or seem made up.
+                            Checks if the AI output contains factual claims that can&apos;t be verified or seem made up.
                           </p>
                         </div>
                       </div>
@@ -443,14 +443,14 @@ export default function ToolsNodePanel({ node, onClose, onDelete, onUpdate }: To
                             <span className="w-12 h-12 bg-heat-100 rounded-full text-white text-[10px] flex items-center justify-center">✓</span>
                             Pass Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"The sky appears blue due to Rayleigh scattering"</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;The sky appears blue due to Rayleigh scattering&quot;</p>
                         </div>
                         <div>
                           <p className="text-xs text-accent-black font-medium flex items-center gap-4">
                             <span className="w-12 h-12 bg-accent-black rounded-full text-white text-[10px] flex items-center justify-center">✗</span>
                             Fail Example:
                           </p>
-                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">"Studies show that 95% of unicorns prefer rainbow diets"</p>
+                          <p className="text-xs text-heat-100 font-mono mt-2 ml-16">&quot;Studies show that 95% of unicorns prefer rainbow diets&quot;</p>
                         </div>
                       </div>
                     </div>

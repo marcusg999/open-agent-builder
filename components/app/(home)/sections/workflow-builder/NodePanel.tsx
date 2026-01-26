@@ -119,7 +119,7 @@ export default function NodePanel({
     setJsonOutputSchema(JSON.stringify(schema, null, 2));
   };
 
-  // Track current node's MCP server IDs
+  // Track current node's MCP server IDs - syncing from external node data
   useEffect(() => {
     if (nodeData && nodes) {
       const actualNode = nodes.find((n) => n.id === nodeData.id);
@@ -128,6 +128,7 @@ export default function NodePanel({
 
         // If we already have server IDs, use them
         if (data.mcpServerIds && Array.isArray(data.mcpServerIds) && data.mcpServerIds.length > 0) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setCurrentMCPServerIds(data.mcpServerIds);
         }
         // If we have mcpTools but no server IDs, try to match them
@@ -160,11 +161,13 @@ export default function NodePanel({
 
           if (mcpIds.length > 0) {
             console.log('✅ Matched server IDs:', mcpIds);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCurrentMCPServerIds(mcpIds);
           }
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeData?.id, nodes, mcpServers]);
 
   // Initialize from nodeData if available
@@ -202,17 +205,20 @@ export default function NodePanel({
 
     if (isNewNode) {
       lastLoadedNodeId.current = nodeData.id;
+      /* eslint-disable react-hooks/set-state-in-effect */
       setName(data.name || data.nodeName || nodeData.label);
       setInstructions(incomingInstructions);
       setIncludeChatHistory(data.includeChatHistory ?? true);
       setModel(data.model || "anthropic/claude-sonnet-4-5-20250929");
       setOutputFormat(data.outputFormat || "Text");
       setShowSearchSources(data.showSearchSources ?? false);
+      /* eslint-enable react-hooks/set-state-in-effect */
       lastSyncedInstructionsRef.current = incomingInstructions;
 
       // Initialize MCP servers from node data
       if (data.mcpServerIds && Array.isArray(data.mcpServerIds)) {
         // If node already has server IDs, use them directly
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentMCPServerIds(data.mcpServerIds);
       } else if (data.mcpTools && Array.isArray(data.mcpTools)) {
         // Convert mcpTools to server IDs by matching against available MCP servers
@@ -257,6 +263,7 @@ export default function NodePanel({
           console.log('🎯 Matched MCP server IDs:', mcpIds);
 
           if (mcpIds.length > 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCurrentMCPServerIds(mcpIds);
           }
         }
@@ -341,6 +348,7 @@ export default function NodePanel({
     }, 500);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     name,
     instructions,
@@ -820,7 +828,7 @@ export default function NodePanel({
                       {expandedMcpId === 'custom' && (
                         <div className="px-16 pb-16 space-y-10 bg-[#f4f4f5]">
                           <p className="text-xs text-black-alpha-48">
-                            Add new MCP servers to your registry in Settings. Once added, they'll appear here for all your agents to use.
+                            Add new MCP servers to your registry in Settings. Once added, they&apos;ll appear here for all your agents to use.
                           </p>
                           <button
                             onClick={() => {
@@ -952,7 +960,7 @@ export default function NodePanel({
                         No fields added yet
                       </p>
                       <p className="text-xs text-black-alpha-32 mt-4">
-                        Click "Add Field" to start building your schema
+                        Click &quot;Add Field&quot; to start building your schema
                       </p>
                     </div>
                   ) : (

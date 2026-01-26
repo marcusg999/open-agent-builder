@@ -124,6 +124,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, user?.id, mcpServers?.length]);
 
   if (!isOpen) return null;
@@ -295,7 +296,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                             Save this key now!
                           </p>
                           <p className="text-body-small text-black-alpha-64 mb-8">
-                            You won't be able to see it again.
+                            You won&apos;t be able to see it again.
                           </p>
                           <div className="flex items-center gap-8">
                             <code className="flex-1 px-12 py-8 bg-white border border-border-faint rounded-8 text-xs font-mono text-accent-black">
@@ -318,7 +319,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                         onClick={() => setGeneratedKey(null)}
                         className="text-body-small text-black-alpha-64 hover:text-accent-black"
                       >
-                        I've saved it
+                        I&apos;ve saved it
                       </button>
                     </div>
                   )}
