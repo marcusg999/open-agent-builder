@@ -407,9 +407,9 @@ Return a JSON object with:
           data: {
             label: "Image Generation (Flux Schnell)",
             nodeType: "image-gen",
-            description: "Generates images via Replicate Flux Schnell (~$0.003/image)",
+            description: "Generates images via Replicate Flux Dev (~$0.003/image)",
             config: {
-              model: "black-forest-labs/flux-schnell",
+              model: "black-forest-labs/flux-dev",
               width: 1792,
               height: 1024
             }

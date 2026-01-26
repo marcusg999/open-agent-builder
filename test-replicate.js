@@ -23,7 +23,7 @@ async function test() {
   console.log('Generating image (~3-5 seconds)...\n');
   
   const output = await replicate.run(
-    "black-forest-labs/flux-schnell",
+    "black-forest-labs/flux-dev",
     {
       input: {
         prompt: "cinematic photo of a futuristic utility jacket on mannequin, studio lighting, 4:3 aspect ratio, professional product photography",
