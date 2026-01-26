@@ -231,7 +231,7 @@ export async function executeImageGenNode(
 
   // Extract configuration
   const config = node.data.config || {};
-  const model = config.model || 'black-forest-labs/flux-schnell';
+  const model = config.model || 'black-forest-labs/flux-dev';
   const numInferenceSteps = config.num_inference_steps || 4;
 
   // Extract prompts from previous node output
