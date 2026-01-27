@@ -417,16 +417,48 @@ Return a JSON object with:
         },
 
         // ══════════════════════════════════════
+        // IMAGE APPROVAL NODE
+        // ══════════════════════════════════════
+        {
+          id: "approval-images",
+          type: "user-approval",
+          position: { x: 2550, y: 250 },
+          data: {
+            label: "Review Generated Images",
+            nodeType: "user-approval",
+            description: "Human review of generated images before video creation",
+            approvalMessage: `**Review Generated Images**
+
+Please review the generated storyboard images below before proceeding to video generation.
+
+**Generated Images:**
+{{lastOutput.totalGenerated}} images generated successfully
+{{lastOutput.totalFailed}} images failed
+
+**Cost:** {{lastOutput.estimatedTotalCost}}
+
+Each approved image will be converted into a 5-second video clip and stitched together into the final ad.
+
+**Please review and approve to continue to video generation.**`,
+            config: {
+              showImages: true,
+              allowPartialApproval: true,
+              approvalOptions: ["Approve All", "Approve Selected", "Regenerate", "Reject"]
+            }
+          }
+        },
+
+        // ══════════════════════════════════════
         // VIDEO GENERATION NODE
         // ══════════════════════════════════════
         {
           id: "tool-video-gen",
           type: "video-gen",
-          position: { x: 2550, y: 250 },
+          position: { x: 2900, y: 250 },
           data: {
             label: "Video Generation (Runway/MiniMax)",
             nodeType: "video-gen",
-            description: "Generates video clips from images via Replicate and stitches them with FFmpeg",
+            description: "Generates video clips from approved images via Replicate and stitches them with FFmpeg",
             videoGenConfig: {
               model: "minimax",
               duration: 5,
@@ -518,8 +550,8 @@ Return a JSON object with:
         // ══════════════════════════════════════
         {
           id: "end-1",
-          type: "end", 
-          position: { x: 2900, y: 400 },
+          type: "end",
+          position: { x: 3250, y: 400 },
           data: {
             label: "Campaign Deliverables",
             nodeType: "end",
@@ -555,12 +587,14 @@ Return a JSON object with:
         { id: "e4", source: "agent-creative-director", target: "agent-scriptwriter", animated: true },
         { id: "e5", source: "agent-scriptwriter", target: "agent-visual-generator", animated: true },
         { id: "e6", source: "agent-visual-generator", target: "tool-image-gen", animated: true },
-        // Parallel execution: image-gen feeds both video-gen and strategist
-        { id: "e7a", source: "tool-image-gen", target: "tool-video-gen", animated: true },
+        // Image-gen feeds both approval (for video) and strategist (parallel)
+        { id: "e7a", source: "tool-image-gen", target: "approval-images", animated: true },
         { id: "e7b", source: "tool-image-gen", target: "agent-strategist", animated: true },
+        // After approval, proceed to video generation
+        { id: "e8", source: "approval-images", target: "tool-video-gen", animated: true },
         // Both parallel branches connect to end
-        { id: "e8a", source: "tool-video-gen", target: "end-1", animated: true },
-        { id: "e8b", source: "agent-strategist", target: "end-1", animated: true }
+        { id: "e9a", source: "tool-video-gen", target: "end-1", animated: true },
+        { id: "e9b", source: "agent-strategist", target: "end-1", animated: true }
       ]
     });
 
