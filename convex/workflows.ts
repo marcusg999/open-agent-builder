@@ -417,12 +417,32 @@ Return a JSON object with:
         },
 
         // ══════════════════════════════════════
+        // VIDEO GENERATION NODE
+        // ══════════════════════════════════════
+        {
+          id: "tool-video-gen",
+          type: "video-gen",
+          position: { x: 2550, y: 250 },
+          data: {
+            label: "Video Generation (Runway/MiniMax)",
+            nodeType: "video-gen",
+            description: "Generates video clips from images via Replicate and stitches them with FFmpeg",
+            videoGenConfig: {
+              model: "minimax",
+              duration: 5,
+              ratio: "16:9",
+              inputMode: "auto"
+            }
+          }
+        },
+
+        // ══════════════════════════════════════
         // AGENT 5: CAMPAIGN STRATEGIST
         // ══════════════════════════════════════
         {
           id: "agent-strategist",
           type: "agent",
-          position: { x: 2550, y: 400 },
+          position: { x: 2550, y: 550 },
           data: {
             label: "Campaign Strategist Agent",
             name: "Campaign Strategist Agent",
@@ -535,8 +555,12 @@ Return a JSON object with:
         { id: "e4", source: "agent-creative-director", target: "agent-scriptwriter", animated: true },
         { id: "e5", source: "agent-scriptwriter", target: "agent-visual-generator", animated: true },
         { id: "e6", source: "agent-visual-generator", target: "tool-image-gen", animated: true },
-        { id: "e7", source: "tool-image-gen", target: "agent-strategist", animated: true },
-        { id: "e8", source: "agent-strategist", target: "end-1", animated: true }
+        // Parallel execution: image-gen feeds both video-gen and strategist
+        { id: "e7a", source: "tool-image-gen", target: "tool-video-gen", animated: true },
+        { id: "e7b", source: "tool-image-gen", target: "agent-strategist", animated: true },
+        // Both parallel branches connect to end
+        { id: "e8a", source: "tool-video-gen", target: "end-1", animated: true },
+        { id: "e8b", source: "agent-strategist", target: "end-1", animated: true }
       ]
     });
 
