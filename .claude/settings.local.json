@@ -12,7 +12,10 @@
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:github.com)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

@@ -1,15 +1,15 @@
 /**
- * Video Generation Executor - Runway Gen-3 Alpha
+ * Video Generation Executor - Runway Gen-3 Alpha via Replicate
  * Generates video clips from prompts/images and stitches them with FFmpeg
  */
 
-import RunwayML from '@runwayml/sdk';
+import Replicate from 'replicate';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
-import fs from 'fs';
-import path from 'path';
-import https from 'https';
-import http from 'http';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as https from 'https';
+import * as http from 'http';
 
 // Set ffmpeg path
 if (ffmpegStatic) {
@@ -18,14 +18,7 @@ if (ffmpegStatic) {
 
 interface VideoGenNode {
   id: string;
-  data: {
-    videoGenConfig?: {
-      model?: 'gen3a_turbo' | 'gen4_turbo';
-      duration?: number;
-      ratio?: string;
-      inputMode?: 'text' | 'image' | 'auto';
-    };
-  };
+  data: any; // Accepts full NodeData from WorkflowNode
 }
 
 interface WorkflowState {
@@ -58,7 +51,7 @@ interface VideoGenOutput {
   totalGenerated: number;
   totalFailed: number;
   estimatedTotalCost: string;
-  provider: 'runway';
+  provider: 'replicate';
   stitchingStatus: 'success' | 'failed' | 'skipped';
 }
 
@@ -260,15 +253,26 @@ function extractPromptsFromMarkdown(text: string): Array<{
 }
 
 /**
- * Helper: Generate a single video clip via Runway API
+ * Helper: Convert image file to data URI for Replicate
+ */
+function imageToDataUri(imagePath: string): string {
+  const imageBuffer = fs.readFileSync(imagePath);
+  const base64Image = imageBuffer.toString('base64');
+  const ext = path.extname(imagePath).toLowerCase();
+  const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+  return `data:${mimeType};base64,${base64Image}`;
+}
+
+/**
+ * Helper: Generate a single video clip via Replicate API
  */
 async function generateSingleClip(
-  runway: RunwayML,
+  replicate: Replicate,
   prompt: string,
   options: {
     shotNumber?: number;
     sourceImage?: string;
-    model?: 'gen3a_turbo' | 'gen4_turbo';
+    model?: 'gen3a_turbo' | 'minimax';
     duration?: number;
     ratio?: string;
     inputMode?: 'text' | 'image' | 'auto';
@@ -276,7 +280,7 @@ async function generateSingleClip(
   outputDir: string
 ): Promise<VideoClipResult> {
   const startTime = Date.now();
-  const model = options.model || 'gen3a_turbo';
+  const model = options.model || 'minimax';
   const duration = options.duration || 5;
   const ratio = options.ratio || '16:9';
   const inputMode = options.inputMode || 'auto';
@@ -286,84 +290,74 @@ async function generateSingleClip(
   console.log(`  Prompt: ${prompt.substring(0, 100)}...`);
 
   try {
-    let taskId: string;
+    let output: any;
 
     // Determine whether to use image-to-video or text-to-video
     const shouldUseImage = inputMode === 'image' ||
       (inputMode === 'auto' && options.sourceImage && fs.existsSync(options.sourceImage));
 
-    if (shouldUseImage && options.sourceImage) {
-      console.log(`  Using image-to-video mode with source: ${options.sourceImage}`);
+    if (model === 'gen3a_turbo') {
+      // Use Runway Gen-3 Alpha via Replicate
+      // Model: runway/gen-3-alpha-turbo
+      const replicateModel = 'runway/gen-3-alpha-turbo';
 
-      // Read image and convert to base64 data URI
-      const imageBuffer = fs.readFileSync(options.sourceImage);
-      const base64Image = imageBuffer.toString('base64');
-      const mimeType = options.sourceImage.endsWith('.png') ? 'image/png' : 'image/jpeg';
-      const dataUri = `data:${mimeType};base64,${base64Image}`;
+      if (shouldUseImage && options.sourceImage) {
+        console.log(`  Using image-to-video mode with source: ${options.sourceImage}`);
+        const imageUri = imageToDataUri(options.sourceImage);
 
-      // Create image-to-video task
-      const task = await runway.imageToVideo.create({
-        model: model,
-        promptImage: dataUri,
-        promptText: prompt,
-        duration: duration,
-        ratio: ratio as '16:9' | '9:16',
-      });
-      taskId = task.id;
-    } else {
-      console.log(`  Using text-to-video mode`);
-
-      // Create text-to-video task (gen4 only supports text-to-video natively)
-      // For gen3a_turbo, we need to use a placeholder approach
-      if (model === 'gen4_turbo') {
-        // Gen4 supports direct text-to-video
-        // Note: gen4_turbo API may differ - adjust as needed
-        const task = await runway.imageToVideo.create({
-          model: 'gen4_turbo',
-          promptText: prompt,
-          duration: duration,
-          ratio: ratio as '16:9' | '9:16',
+        output = await replicate.run(replicateModel as any, {
+          input: {
+            prompt: prompt,
+            image: imageUri,
+            duration: duration,
+            aspect_ratio: ratio,
+          },
         });
-        taskId = task.id;
       } else {
-        // For gen3a_turbo, text-to-video still needs promptText with the imageToVideo endpoint
-        // We'll pass just the text prompt
-        const task = await runway.imageToVideo.create({
-          model: model,
-          promptText: prompt,
-          duration: duration,
-          ratio: ratio as '16:9' | '9:16',
+        console.log(`  Using text-to-video mode`);
+        output = await replicate.run(replicateModel as any, {
+          input: {
+            prompt: prompt,
+            duration: duration,
+            aspect_ratio: ratio,
+          },
         });
-        taskId = task.id;
+      }
+    } else {
+      // Use MiniMax video-01 model (good quality, cost-effective)
+      // Model: minimax/video-01
+      const replicateModel = 'minimax/video-01';
+
+      if (shouldUseImage && options.sourceImage) {
+        console.log(`  Using image-to-video mode with source: ${options.sourceImage}`);
+        const imageUri = imageToDataUri(options.sourceImage);
+
+        output = await replicate.run(replicateModel as any, {
+          input: {
+            prompt: prompt,
+            first_frame_image: imageUri,
+          },
+        });
+      } else {
+        console.log(`  Using text-to-video mode`);
+        output = await replicate.run(replicateModel as any, {
+          input: {
+            prompt: prompt,
+          },
+        });
       }
     }
 
-    console.log(`  Task created with ID: ${taskId}`);
-
-    // Poll for completion
-    let task = await runway.tasks.retrieve(taskId);
-    let pollCount = 0;
-    const maxPolls = 120; // 10 minutes max (5s intervals)
-
-    while (task.status !== 'SUCCEEDED' && task.status !== 'FAILED' && pollCount < maxPolls) {
-      console.log(`  Task status: ${task.status} (poll ${pollCount + 1})`);
-      await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second intervals
-      task = await runway.tasks.retrieve(taskId);
-      pollCount++;
-    }
-
-    if (task.status === 'FAILED') {
-      throw new Error(`Video generation failed: ${(task as any).failure || 'Unknown error'}`);
-    }
-
-    if (task.status !== 'SUCCEEDED') {
-      throw new Error(`Video generation timed out after ${maxPolls * 5} seconds`);
-    }
-
-    // Get output URL
-    const outputUrl = Array.isArray(task.output) ? task.output[0] : task.output;
-    if (!outputUrl) {
-      throw new Error('No output URL returned from Runway');
+    // Get output URL - Replicate returns URL directly or in an array
+    let outputUrl: string;
+    if (typeof output === 'string') {
+      outputUrl = output;
+    } else if (Array.isArray(output) && output.length > 0) {
+      outputUrl = output[0];
+    } else if (output && typeof output === 'object' && 'url' in output) {
+      outputUrl = output.url;
+    } else {
+      throw new Error('Unexpected output format from Replicate');
     }
 
     console.log(`  Video generated successfully: ${outputUrl}`);
@@ -374,11 +368,13 @@ async function generateSingleClip(
     const localPath = path.join(outputDir, filename);
     const publicUrl = `/generated-videos/${filename}`;
 
-    await downloadFile(outputUrl as string, localPath);
+    await downloadFile(outputUrl, localPath);
     console.log(`  Downloaded to: ${localPath}`);
 
     const generationTime = ((Date.now() - startTime) / 1000).toFixed(1);
-    const estimatedCost = (duration * 0.05).toFixed(2); // ~$0.05 per second
+    // Estimate cost based on model - Replicate prices vary
+    const costPerSecond = model === 'gen3a_turbo' ? 0.05 : 0.025;
+    const estimatedCost = (duration * costPerSecond).toFixed(2);
 
     return {
       shotNumber: options.shotNumber,
@@ -506,7 +502,7 @@ async function stitchClipsWithFFmpeg(
 export async function executeVideoGenNode(
   node: VideoGenNode,
   state: WorkflowState,
-  apiKeys?: { runway?: string }
+  apiKeys?: { replicate?: string }
 ): Promise<VideoGenOutput> {
   console.log('🎬 Video Generation Node Starting...');
   console.log('Node ID:', node.id);
@@ -515,19 +511,19 @@ export async function executeVideoGenNode(
   const startTime = Date.now();
 
   // Validate API key
-  const runwayKey = apiKeys?.runway || process.env.RUNWAYML_API_SECRET;
-  if (!runwayKey) {
+  const replicateKey = apiKeys?.replicate || process.env.REPLICATE_API_TOKEN;
+  if (!replicateKey) {
     throw new Error(
-      'RUNWAYML_API_SECRET not found. Please add it to your .env.local file or provide it via API keys configuration.'
+      'REPLICATE_API_TOKEN not found. Please add it to your .env.local file or provide it via API keys configuration.'
     );
   }
 
-  // Initialize Runway client
-  const runway = new RunwayML({ apiKey: runwayKey });
+  // Initialize Replicate client
+  const replicate = new Replicate({ auth: replicateKey });
 
   // Extract configuration
   const config = node.data.videoGenConfig || {};
-  const model = config.model || 'gen3a_turbo';
+  const model = config.model || 'minimax';
   const duration = config.duration || 5;
   const ratio = config.ratio || '16:9';
   const inputMode = config.inputMode || 'auto';
@@ -541,7 +537,7 @@ export async function executeVideoGenNode(
   // Ensure output directory exists
   const outputDir = ensurePublicDirectory('generated-videos');
 
-  // Safety limit - video generation is expensive (~$0.25 per 5s clip)
+  // Safety limit - video generation is expensive
   const MAX_CLIPS = 10;
   const promptsToGenerate = prompts.slice(0, MAX_CLIPS);
 
@@ -550,7 +546,7 @@ export async function executeVideoGenNode(
   }
 
   const clips: VideoClipResult[] = [];
-  const costPerSecond = 0.05;
+  const costPerSecond = model === 'gen3a_turbo' ? 0.05 : 0.025;
   let successCount = 0;
   let failCount = 0;
 
@@ -562,7 +558,7 @@ export async function executeVideoGenNode(
 
     try {
       const clip = await generateSingleClip(
-        runway,
+        replicate,
         prompt,
         {
           shotNumber,
@@ -651,7 +647,7 @@ export async function executeVideoGenNode(
     totalGenerated: successCount,
     totalFailed: failCount,
     estimatedTotalCost: `$${totalCost}`,
-    provider: 'runway',
+    provider: 'replicate',
     stitchingStatus,
   };
 }

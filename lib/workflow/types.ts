@@ -2,7 +2,7 @@
 
 export interface WorkflowNode {
   id: string;
-  type: 'agent' | 'mcp' | 'if-else' | 'while' | 'user-approval' | 'transform' | 'set-state' | 'end' | 'start' | 'guardrails' | 'arcade' | 'note';
+  type: 'agent' | 'mcp' | 'if-else' | 'while' | 'user-approval' | 'transform' | 'set-state' | 'end' | 'start' | 'guardrails' | 'arcade' | 'note' | 'image-gen' | 'video-gen';
   position: { x: number; y: number };
   data: NodeData;
 }
@@ -87,6 +87,14 @@ export interface NodeData {
   actionOnViolation?: string;
   maxIterations?: number | string;
   timeoutMinutes?: number | string;
+
+  // Video-gen node data
+  videoGenConfig?: {
+    model?: 'gen3a_turbo' | 'minimax';
+    duration?: number;
+    ratio?: string;
+    inputMode?: 'text' | 'image' | 'auto';
+  };
 }
 
 export interface MCPServer {
@@ -107,10 +115,12 @@ export interface WorkflowEdge {
   type?: string;
   label?: string; // For conditional edges like "true"/"false"
   sourceHandle?: string; // For conditional edges like "if"/"else"
+  animated?: boolean; // For React Flow animated edges
 }
 
 export interface Workflow {
   id: string;
+  customId?: string; // Optional custom identifier
   name: string;
   description?: string;
   category?: string;
@@ -121,6 +131,8 @@ export interface Workflow {
   edges: WorkflowEdge[];
   createdAt: string;
   updatedAt: string;
+  _convexId?: string; // Convex database ID
+  _id?: string; // Alternative database ID
 }
 
 export interface WorkflowExecution {

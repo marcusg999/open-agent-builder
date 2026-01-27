@@ -22,6 +22,7 @@ import { executeHTTPNode } from './executors/http';
 import { executeExtractNode } from './executors/extract';
 import { executeArcadeNode } from './executors/arcade';
 import { executeImageGenNode } from './executors/image-gen';
+import { executeVideoGenNode } from './executors/video-gen';
 import { createOrUpdateArcadeAuthRecord } from '../arcade/auth-store';
 
 interface ArcadePendingResponse {
@@ -91,7 +92,7 @@ export const WorkflowStateAnnotation = Annotation.Root({
 export class LangGraphExecutor {
   private workflow: Workflow;
   private graph: any; // Compiled StateGraph
-  private apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string; replicate?: string };
+  private apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string; replicate?: string; runway?: string };
   private onNodeUpdate?: (nodeId: string, result: NodeExecutionResult) => void;
   private checkpointer: MemorySaver;
   private parallelNodeIds = new Set<string>();
@@ -104,7 +105,7 @@ export class LangGraphExecutor {
   constructor(
     workflow: Workflow,
     onNodeUpdate?: (nodeId: string, result: NodeExecutionResult) => void,
-    apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string; replicate?: string }
+    apiKeys?: { anthropic?: string; groq?: string; openai?: string; firecrawl?: string; arcade?: string; replicate?: string; runway?: string }
   ) {
     
     this.workflow = workflow;
@@ -508,6 +509,9 @@ export class LangGraphExecutor {
 
       case 'image-gen':
         return await executeImageGenNode(node, state, this.apiKeys);
+
+      case 'video-gen':
+        return await executeVideoGenNode(node, state, this.apiKeys);
 
       case 'agent': {
         // Use the proper executeAgentNode which handles MCP tools
@@ -1040,6 +1044,9 @@ export class LangGraphExecutor {
 
       case 'image-gen':
         return await executeImageGenNode(node, state, this.apiKeys);
+
+      case 'video-gen':
+        return await executeVideoGenNode(node, state, this.apiKeys);
 
       case 'passthrough':
         return state.variables.lastOutput;

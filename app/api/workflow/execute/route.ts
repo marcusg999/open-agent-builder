@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
           openai: process.env.OPENAI_API_KEY,
           firecrawl: process.env.FIRECRAWL_API_KEY,
           arcade: process.env.ARCADE_API_KEY,
+          replicate: process.env.REPLICATE_API_TOKEN,
         };
 
         // Create executor with update callback

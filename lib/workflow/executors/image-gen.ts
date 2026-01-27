@@ -9,14 +9,7 @@ import path from 'path';
 
 interface ImageGenNode {
   id: string;
-  data: {
-    config?: {
-      model?: string;
-      width?: number;
-      height?: number;
-      num_inference_steps?: number;
-    };
-  };
+  data: any; // Accepts full NodeData from WorkflowNode
 }
 
 interface WorkflowState {

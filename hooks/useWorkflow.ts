@@ -207,7 +207,7 @@ export function useWorkflow(workflowId?: string) {
     [workflow]
   );
 
-  const saveWorkflowImmediate = useCallback(async () => {
+  const saveWorkflowImmediate = useCallback(async (updates?: Partial<Workflow>) => {
     if (!workflow) return false;
 
     if (saveTimeout.current) {
@@ -216,16 +216,42 @@ export function useWorkflow(workflowId?: string) {
     }
 
     try {
-      await persistWorkflow({
+      const updated: Workflow = {
         ...workflow,
+        ...updates,
         updatedAt: new Date().toISOString(),
-      });
+      };
+      setWorkflow(updated);
+      await persistWorkflow(updated);
       return true;
     } catch (err) {
       console.error('Immediate save failed:', err);
       return false;
     }
   }, [workflow]);
+
+  const deleteWorkflow = useCallback(async (workflowIdToDelete: string) => {
+    try {
+      const res = await fetch(`/api/workflows/${workflowIdToDelete}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Refresh the workflows list
+        await loadWorkflows();
+        // If we deleted the current workflow, create a new one
+        if (workflow?.id === workflowIdToDelete) {
+          createNewWorkflow();
+        }
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Delete workflow failed:', err);
+      return false;
+    }
+  }, [workflow, loadWorkflows, createNewWorkflow]);
 
   /* --------------------------- updates ------------------------------ */
 
@@ -260,6 +286,7 @@ export function useWorkflow(workflowId?: string) {
     convexId,
     saveWorkflow,
     saveWorkflowImmediate,
+    deleteWorkflow,
     updateNodes,
     updateEdges,
     updateNodeData,
