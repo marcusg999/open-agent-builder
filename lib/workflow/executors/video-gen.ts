@@ -530,7 +530,41 @@ export async function executeVideoGenNode(
 
   // Extract prompts from previous node output
   const lastOutput = state.variables.lastOutput;
-  const prompts = extractVideoPrompts(lastOutput);
+  let prompts: Array<{
+    shotNumber?: number;
+    prompt: string;
+    sourceImage?: string;
+    aspectRatio?: string;
+  }>;
+
+  // Check if lastOutput contains approved images from an approval node
+  if (lastOutput && typeof lastOutput === 'object') {
+    const output = lastOutput as any;
+
+    // Check for approved images from user-approval node
+    if (output.approvedImages && Array.isArray(output.approvedImages)) {
+      console.log('Using approved images from approval node');
+      prompts = output.approvedImages.map((img: any, index: number) => ({
+        shotNumber: img.shotNumber || index + 1,
+        prompt: img.originalPrompt || `Shot ${index + 1}`,
+        sourceImage: img.localPath,
+        aspectRatio: '16:9',
+      }));
+    } else if (output.selectedImages && Array.isArray(output.selectedImages)) {
+      console.log('Using selected images from approval node');
+      prompts = output.selectedImages.map((img: any, index: number) => ({
+        shotNumber: img.shotNumber || index + 1,
+        prompt: img.originalPrompt || `Shot ${index + 1}`,
+        sourceImage: img.localPath,
+        aspectRatio: '16:9',
+      }));
+    } else {
+      // Fallback to extracting from general output
+      prompts = extractVideoPrompts(lastOutput);
+    }
+  } else {
+    prompts = extractVideoPrompts(lastOutput);
+  }
 
   console.log(`Found ${prompts.length} prompts to generate`);
 

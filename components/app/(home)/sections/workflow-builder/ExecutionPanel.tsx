@@ -27,10 +27,19 @@ interface ExecutionPanelProps {
   isRunning: boolean;
   currentNodeId: string | null;
   onRun: (input: string) => void;
-  onResumePendingAuth: () => Promise<void>;
+  onResumePendingAuth: (selectedImages?: any[]) => Promise<void>;
   onClose: () => void;
   environment: 'draft' | 'production';
   pendingAuth: WorkflowPendingAuth | null;
+}
+
+interface ImageForApproval {
+  shotNumber?: number;
+  url: string;
+  localPath: string;
+  originalPrompt: string;
+  success: boolean;
+  selected: boolean;
 }
 
 const getNodeIcon = (nodeType: string) => {
@@ -84,6 +93,55 @@ export default function ExecutionPanel({
   const [notifiedDocs, setNotifiedDocs] = useState<Set<string>>(new Set());
   const [isResumingAuth, setIsResumingAuth] = useState(false);
   const [copiedAuthLink, setCopiedAuthLink] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<ImageForApproval[]>([]);
+
+  // Extract images from previous node output for approval
+  const imagesForApproval = useMemo(() => {
+    if (!pendingAuth || pendingAuth.toolName !== 'user-approval') return [];
+
+    // Find the image-gen node result (look for images array in any node result)
+    for (const [nodeId, result] of Object.entries(nodeResults)) {
+      if (result.output && typeof result.output === 'object') {
+        const output = result.output as any;
+        if (output.images && Array.isArray(output.images)) {
+          return output.images
+            .filter((img: any) => img.success)
+            .map((img: any, index: number) => ({
+              shotNumber: img.shotNumber || index + 1,
+              url: img.url || img.localPath,
+              localPath: img.localPath,
+              originalPrompt: img.originalPrompt || `Shot ${index + 1}`,
+              success: img.success,
+              selected: true, // Default all selected
+            }));
+        }
+      }
+    }
+    return [];
+  }, [pendingAuth, nodeResults]);
+
+  // Initialize selected images when approval images change
+  useEffect(() => {
+    if (imagesForApproval.length > 0 && selectedImages.length === 0) {
+      setSelectedImages(imagesForApproval);
+    }
+  }, [imagesForApproval, selectedImages.length]);
+
+  const toggleImageSelection = (index: number) => {
+    setSelectedImages(prev => prev.map((img, i) =>
+      i === index ? { ...img, selected: !img.selected } : img
+    ));
+  };
+
+  const selectAllImages = () => {
+    setSelectedImages(prev => prev.map(img => ({ ...img, selected: true })));
+  };
+
+  const deselectAllImages = () => {
+    setSelectedImages(prev => prev.map(img => ({ ...img, selected: false })));
+  };
+
+  const selectedCount = selectedImages.filter(img => img.selected).length;
 
   const handleCopyAuthLink = useCallback(() => {
     if (!pendingAuth?.authUrl) return;
@@ -452,44 +510,162 @@ export default function ExecutionPanel({
                   Workflow Paused
                 </p>
                 <p className="text-body-small text-black-alpha-48 mb-8">
-                  Approval Required
+                  {selectedImages.length > 0 ? 'Review Generated Images' : 'Approval Required'}
                 </p>
-                <div className="p-12 bg-background-base border border-border-faint rounded-6">
-                  <p className="text-body-small text-accent-black whitespace-pre-wrap">
-                    {pendingAuth.message || 'This workflow requires your approval to continue.'}
-                  </p>
-                </div>
+                {selectedImages.length === 0 && (
+                  <div className="p-12 bg-background-base border border-border-faint rounded-6">
+                    <p className="text-body-small text-accent-black whitespace-pre-wrap">
+                      {pendingAuth.message || 'This workflow requires your approval to continue.'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Image Selection Grid */}
+            {selectedImages.length > 0 && (
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-8">
+                  <p className="text-body-small text-black-alpha-64">
+                    {selectedCount} of {selectedImages.length} images selected
+                  </p>
+                  <div className="flex gap-8">
+                    <button
+                      type="button"
+                      onClick={selectAllImages}
+                      className="text-body-small text-heat-100 hover:text-heat-200 transition-colors"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={deselectAllImages}
+                      className="text-body-small text-black-alpha-48 hover:text-black-alpha-64 transition-colors"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8 max-h-[300px] overflow-y-auto p-4">
+                  {selectedImages.map((image, index) => (
+                    <div
+                      key={index}
+                      onClick={() => toggleImageSelection(index)}
+                      className={`relative cursor-pointer rounded-8 overflow-hidden border-2 transition-all ${
+                        image.selected
+                          ? 'border-heat-100 ring-2 ring-heat-100/20'
+                          : 'border-border-faint opacity-50 hover:opacity-75'
+                      }`}
+                    >
+                      {/* Image */}
+                      <div className="aspect-video bg-background-base">
+                        <img
+                          src={image.url}
+                          alt={`Shot ${image.shotNumber}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                          }}
+                        />
+                      </div>
+
+                      {/* Selection Checkbox */}
+                      <div className={`absolute top-6 left-6 w-20 h-20 rounded-4 flex items-center justify-center transition-colors ${
+                        image.selected ? 'bg-heat-100' : 'bg-white/80 border border-border-faint'
+                      }`}>
+                        {image.selected && (
+                          <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+
+                      {/* Shot Number Badge */}
+                      <div className="absolute top-6 right-6 px-6 py-2 bg-black/60 rounded-4">
+                        <span className="text-[10px] text-white font-medium">Shot {image.shotNumber}</span>
+                      </div>
+
+                      {/* Prompt Preview */}
+                      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                        <p className="text-[10px] text-white/90 line-clamp-2">
+                          {image.originalPrompt}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Approval Buttons */}
             <div className="flex gap-8">
-              <button
-                type="button"
-                onClick={async () => {
-                  setIsResumingAuth(true);
-                  try {
-                    await onResumePendingAuth();
-                    toast.success('Approved');
-                  } catch (error) {
-                    toast.error('Failed to resume workflow');
-                  } finally {
-                    setIsResumingAuth(false);
-                  }
-                }}
-                disabled={isResumingAuth}
-                className="flex-1 px-14 py-8 bg-heat-100 hover:bg-heat-200 text-white rounded-6 text-body-small font-medium transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isResumingAuth ? 'Approving...' : 'Approve'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  toast.error('Rejected');
-                  onClose();
-                }}
-                className="flex-1 px-14 py-8 bg-background-base hover:bg-black-alpha-4 text-accent-black border border-border-faint rounded-6 text-body-small font-medium transition-all active:scale-[0.98]"
-              >
-                Reject
-              </button>
+              {selectedImages.length > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsResumingAuth(true);
+                      try {
+                        const approved = selectedImages.filter(img => img.selected);
+                        await onResumePendingAuth(approved);
+                        toast.success(`Approved ${approved.length} images for video generation`);
+                      } catch (error) {
+                        toast.error('Failed to resume workflow');
+                      } finally {
+                        setIsResumingAuth(false);
+                        setSelectedImages([]);
+                      }
+                    }}
+                    disabled={isResumingAuth || selectedCount === 0}
+                    className="flex-1 px-14 py-8 bg-heat-100 hover:bg-heat-200 text-white rounded-6 text-body-small font-medium transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isResumingAuth ? 'Processing...' : selectedCount === selectedImages.length ? `Approve All (${selectedCount})` : `Approve Selected (${selectedCount})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.error('Rejected - workflow stopped');
+                      setSelectedImages([]);
+                      onClose();
+                    }}
+                    className="px-14 py-8 bg-background-base hover:bg-black-alpha-4 text-accent-black border border-border-faint rounded-6 text-body-small font-medium transition-all active:scale-[0.98]"
+                  >
+                    Reject
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsResumingAuth(true);
+                      try {
+                        await onResumePendingAuth();
+                        toast.success('Approved');
+                      } catch (error) {
+                        toast.error('Failed to resume workflow');
+                      } finally {
+                        setIsResumingAuth(false);
+                      }
+                    }}
+                    disabled={isResumingAuth}
+                    className="flex-1 px-14 py-8 bg-heat-100 hover:bg-heat-200 text-white rounded-6 text-body-small font-medium transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isResumingAuth ? 'Approving...' : 'Approve'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.error('Rejected');
+                      onClose();
+                    }}
+                    className="flex-1 px-14 py-8 bg-background-base hover:bg-black-alpha-4 text-accent-black border border-border-faint rounded-6 text-body-small font-medium transition-all active:scale-[0.98]"
+                  >
+                    Reject
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

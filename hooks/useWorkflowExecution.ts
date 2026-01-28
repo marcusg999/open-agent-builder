@@ -276,7 +276,7 @@ export function useWorkflowExecution() {
     setCurrentNodeId(null);
   }, []);
 
-  const resumeWorkflow = useCallback(async () => {
+  const resumeWorkflow = useCallback(async (selectedImages?: any[]) => {
     if (!currentWorkflow) {
       console.error('❌ No workflow to resume');
       return;
@@ -296,9 +296,24 @@ export function useWorkflowExecution() {
     }
 
     console.log('⏳ Resuming workflow from approval...');
+    if (selectedImages) {
+      console.log(`📸 With ${selectedImages.length} selected images`);
+    }
     setIsRunning(true);
 
     try {
+      // Build resume value with selected images if provided
+      const resumeValue: any = { approved: true, status: 'approved' };
+      if (selectedImages && selectedImages.length > 0) {
+        resumeValue.selectedImages = selectedImages;
+        resumeValue.approvedImages = selectedImages.map((img: any) => ({
+          shotNumber: img.shotNumber,
+          url: img.url,
+          localPath: img.localPath,
+          originalPrompt: img.originalPrompt,
+        }));
+      }
+
       // Call resume API endpoint
       const response = await fetch(`/api/workflows/${currentWorkflow.id}/resume`, {
         method: 'POST',
@@ -306,7 +321,7 @@ export function useWorkflowExecution() {
         body: JSON.stringify({
           threadId,
           executionId,
-          resumeValue: { approved: true, status: 'approved' },
+          resumeValue,
         }),
         signal: abortControllerRef.current?.signal,
       });
