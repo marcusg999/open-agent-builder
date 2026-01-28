@@ -1006,13 +1006,19 @@ export class LangGraphExecutor {
     });
 
     this.pendingAuth = null;
-    result.status = 'running';
+
+    // After resume, update the result with the approval data
+    const approvalResult = resumeValue ?? { approved: true };
+    result.status = 'completed';
+    result.output = approvalResult;
     result.pendingAuth = undefined;
-    result.output = undefined;
-    delete result.completedAt;
+    result.completedAt = new Date().toISOString();
     this.onNodeUpdate?.(node.id, result);
 
-    return resumeValue ?? { approved: true };
+    console.log('Approval resumed with value:', JSON.stringify(approvalResult, null, 2));
+
+    // Return the approval result so it flows to the next node as lastOutput
+    return approvalResult;
   }
 
   /**
