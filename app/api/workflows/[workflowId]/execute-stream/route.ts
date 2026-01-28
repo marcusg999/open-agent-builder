@@ -119,7 +119,7 @@ export async function POST(
           openai: (userId ? await getLLMApiKey('openai', userId) : null) || process.env.OPENAI_API_KEY,
           firecrawl: process.env.FIRECRAWL_API_KEY, // Firecrawl keys are still environment-only for now
           arcade: process.env.ARCADE_API_KEY,
-          replicate: process.env.REPLICATE_API_TOKEN,
+          replicate: process.env.REPLICATE_API_KEY,
         };
 
         // Prepare initial input - pass as object if it's an object, otherwise as string

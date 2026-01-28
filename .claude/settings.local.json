@@ -17,7 +17,10 @@
       "Bash(npm uninstall:*)",
       "Bash(npm run build:*)",
       "Bash(brew upgrade:*)",
-      "Bash(npx convex run:*)"
+      "Bash(npx convex run:*)",
+      "Bash(grep:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)"
     ]
   }
 }

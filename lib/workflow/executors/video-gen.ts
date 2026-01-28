@@ -511,10 +511,10 @@ export async function executeVideoGenNode(
   const startTime = Date.now();
 
   // Validate API key
-  const replicateKey = apiKeys?.replicate || process.env.REPLICATE_API_TOKEN;
+  const replicateKey = apiKeys?.replicate || process.env.REPLICATE_API_KEY;
   if (!replicateKey) {
     throw new Error(
-      'REPLICATE_API_TOKEN not found. Please add it to your .env.local file or provide it via API keys configuration.'
+      'REPLICATE_API_KEY not found. Please add it to your .env.local file or provide it via API keys configuration.'
     );
   }
 
