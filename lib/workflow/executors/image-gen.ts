@@ -1,11 +1,36 @@
 /**
- * Image Generation Executor - Flux Schnell via Replicate
+ * Image Generation Executor - Flux models via Replicate
+ * Supports: flux-dev, flux-1.1-pro, flux-schnell
  * Saves images to /public/generated-images/ and returns local URLs
  */
 
 import Replicate from 'replicate';
 import fs from 'fs';
 import path from 'path';
+
+// Model configurations with Replicate IDs and pricing
+const FLUX_MODELS = {
+  'flux-dev': {
+    replicateId: 'black-forest-labs/flux-dev',
+    costPerImage: 0.025, // Higher quality, slower
+    defaultSteps: 28,
+    description: 'High quality, best for detailed images',
+  },
+  'flux-1.1-pro': {
+    replicateId: 'black-forest-labs/flux-1.1-pro',
+    costPerImage: 0.04, // Highest quality
+    defaultSteps: 25,
+    description: 'Professional quality, best results',
+  },
+  'flux-schnell': {
+    replicateId: 'black-forest-labs/flux-schnell',
+    costPerImage: 0.003, // Fast and cheap
+    defaultSteps: 4,
+    description: 'Fast generation, good for drafts',
+  },
+} as const;
+
+type FluxModelKey = keyof typeof FLUX_MODELS;
 
 interface ImageGenNode {
   id: string;
@@ -38,6 +63,8 @@ interface ImageGenOutput {
   totalRequested: number;
   estimatedTotalCost: string;
   provider: string;
+  model: string;
+  modelId: string;
   savedToPublic: boolean;
   publicPath: string;
 }
@@ -222,10 +249,34 @@ export async function executeImageGenNode(
   // Initialize Replicate
   const replicate = new Replicate({ auth: replicateKey });
 
-  // Extract configuration
-  const config = node.data.config || {};
-  const model = config.model || 'black-forest-labs/flux-dev';
-  const numInferenceSteps = config.num_inference_steps || 4;
+  // Extract configuration - support both new imageGenConfig and legacy config
+  const imageGenConfig = node.data.imageGenConfig || {};
+  const legacyConfig = node.data.config || {};
+
+  // Determine model - check imageGenConfig first, then legacy config
+  let modelKey: FluxModelKey = 'flux-dev'; // Default
+  if (imageGenConfig.model && imageGenConfig.model in FLUX_MODELS) {
+    modelKey = imageGenConfig.model as FluxModelKey;
+  } else if (legacyConfig.model) {
+    // Handle legacy full model IDs
+    const legacyModel = legacyConfig.model as string;
+    if (legacyModel.includes('flux-schnell')) {
+      modelKey = 'flux-schnell';
+    } else if (legacyModel.includes('flux-1.1-pro')) {
+      modelKey = 'flux-1.1-pro';
+    } else if (legacyModel.includes('flux-dev')) {
+      modelKey = 'flux-dev';
+    }
+  }
+
+  const modelConfig = FLUX_MODELS[modelKey];
+  const model = modelConfig.replicateId;
+  const costPerImage = modelConfig.costPerImage;
+  const numInferenceSteps = legacyConfig.num_inference_steps || modelConfig.defaultSteps;
+
+  console.log(`🎨 Using model: ${modelKey} (${model})`);
+  console.log(`   Cost per image: $${costPerImage}`);
+  console.log(`   Inference steps: ${numInferenceSteps}`);
 
   // Extract prompts from previous node output
   const lastOutput = state.variables.lastOutput;
@@ -245,7 +296,7 @@ export async function executeImageGenNode(
   }
 
   const results: ImageResult[] = [];
-  const costPerImage = 0.003;
+  // costPerImage is already set from modelConfig above
   let successCount = 0;
   let failCount = 0;
 
@@ -353,6 +404,8 @@ export async function executeImageGenNode(
     totalRequested: promptsToGenerate.length,
     estimatedTotalCost: `$${totalCost}`,
     provider: 'replicate',
+    model: modelKey,
+    modelId: model,
     savedToPublic: true,
     publicPath: '/generated-images/',
   };

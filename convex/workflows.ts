@@ -399,19 +399,21 @@ Return a JSON object with:
 
         // ══════════════════════════════════════
         // IMAGE GENERATION NODE
+        // Models: flux-dev (~$0.025), flux-1.1-pro (~$0.04), flux-schnell (~$0.003)
         // ══════════════════════════════════════
         {
           id: "tool-image-gen",
           type: "image-gen",
           position: { x: 2200, y: 400 },
           data: {
-            label: "Image Generation (Flux Schnell)",
+            label: "Image Generation (Flux)",
             nodeType: "image-gen",
-            description: "Generates images via Replicate Flux Dev (~$0.003/image)",
-            config: {
-              model: "black-forest-labs/flux-dev",
+            description: "Generates images via Replicate Flux models",
+            imageGenConfig: {
+              model: "flux-dev", // Options: "flux-dev", "flux-1.1-pro", "flux-schnell"
               width: 1792,
-              height: 1024
+              height: 1024,
+              aspectRatio: "16:9"
             }
           }
         },

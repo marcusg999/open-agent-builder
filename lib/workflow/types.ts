@@ -88,6 +88,16 @@ export interface NodeData {
   maxIterations?: number | string;
   timeoutMinutes?: number | string;
 
+  // Image-gen node data
+  imageGenConfig?: {
+    model?: 'flux-dev' | 'flux-1.1-pro' | 'flux-schnell';
+    width?: number;
+    height?: number;
+    aspectRatio?: string;
+    numOutputs?: number;
+    outputFormat?: 'webp' | 'png' | 'jpg';
+  };
+
   // Video-gen node data
   videoGenConfig?: {
     model?: 'gen3a_turbo' | 'minimax';
