@@ -20,7 +20,8 @@
       "Bash(npx convex run:*)",
       "Bash(grep:*)",
       "Bash(lsof:*)",
-      "Bash(xargs kill -9)"
+      "Bash(xargs kill -9)",
+      "WebFetch(domain:replicate.com)"
     ]
   }
 }
