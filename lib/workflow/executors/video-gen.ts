@@ -530,6 +530,9 @@ export async function executeVideoGenNode(
 
   // Extract prompts from previous node output
   const lastOutput = state.variables.lastOutput;
+  console.log('🎬 Video-gen received lastOutput:', JSON.stringify(lastOutput, null, 2));
+  console.log('🎬 Video-gen state.variables keys:', Object.keys(state.variables));
+
   let prompts: Array<{
     shotNumber?: number;
     prompt: string;
@@ -540,10 +543,13 @@ export async function executeVideoGenNode(
   // Check if lastOutput contains approved images from an approval node
   if (lastOutput && typeof lastOutput === 'object') {
     const output = lastOutput as any;
+    console.log('🎬 lastOutput keys:', Object.keys(output));
+    console.log('🎬 Has approvedImages:', !!output.approvedImages);
+    console.log('🎬 Has selectedImages:', !!output.selectedImages);
 
     // Check for approved images from user-approval node
     if (output.approvedImages && Array.isArray(output.approvedImages)) {
-      console.log('Using approved images from approval node');
+      console.log('✅ Using approved images from approval node:', output.approvedImages.length);
       prompts = output.approvedImages.map((img: any, index: number) => ({
         shotNumber: img.shotNumber || index + 1,
         prompt: img.originalPrompt || `Shot ${index + 1}`,

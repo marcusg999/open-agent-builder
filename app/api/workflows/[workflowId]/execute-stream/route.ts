@@ -219,9 +219,11 @@ export async function POST(
 
             // Check for pending auth/approval
             if (mergedState.pendingAuth) {
+              // Include nodeResults so client has all data for approval UI
               sendEvent('workflow_paused', {
                 reason: 'pending_authorization',
                 pendingAuth: mergedState.pendingAuth,
+                nodeResults: mergedState.nodeResults,
                 executionId,
                 threadId,
                 timestamp: new Date().toISOString(),

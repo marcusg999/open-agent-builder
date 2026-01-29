@@ -99,11 +99,20 @@ export default function ExecutionPanel({
   const imagesForApproval = useMemo(() => {
     if (!pendingAuth || pendingAuth.toolName !== 'user-approval') return [];
 
+    console.log('🔍 Looking for images in nodeResults:', Object.keys(nodeResults));
+
     // Find the image-gen node result (look for images array in any node result)
     for (const [nodeId, result] of Object.entries(nodeResults)) {
+      console.log(`  Node ${nodeId}:`, {
+        status: result.status,
+        outputType: typeof result.output,
+        outputKeys: result.output && typeof result.output === 'object' ? Object.keys(result.output as any) : [],
+      });
+
       if (result.output && typeof result.output === 'object') {
         const output = result.output as any;
         if (output.images && Array.isArray(output.images)) {
+          console.log(`✅ Found images in node ${nodeId}:`, output.images.length, 'images');
           return output.images
             .filter((img: any) => img.success)
             .map((img: any, index: number) => ({
@@ -117,6 +126,7 @@ export default function ExecutionPanel({
         }
       }
     }
+    console.log('❌ No images found in any node result');
     return [];
   }, [pendingAuth, nodeResults]);
 
