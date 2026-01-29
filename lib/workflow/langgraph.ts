@@ -1017,8 +1017,19 @@ export class LangGraphExecutor {
 
     console.log('Approval resumed with value:', JSON.stringify(approvalResult, null, 2));
 
-    // Return the approval result so it flows to the next node as lastOutput
-    return approvalResult;
+    // Return proper LangGraph state update so approvalResult becomes lastOutput for next node
+    const nodeKey = (node.data as any)?.nodeName || (node.data as any)?.name || node.id;
+    return {
+      variables: {
+        lastOutput: approvalResult,
+        [nodeKey]: approvalResult,
+        [node.id]: approvalResult,
+      },
+      chatHistory: [],
+      currentNodeId: node.id,
+      nodeResults: { [node.id]: result },
+      pendingAuth: null,
+    };
   }
 
   /**
