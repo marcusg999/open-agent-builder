@@ -219,6 +219,9 @@ export async function POST(
 
             // Check for pending auth/approval
             if (mergedState.pendingAuth) {
+              console.log('🔐 SERVER: Sending workflow_paused with nodeResults:', Object.keys(mergedState.nodeResults || {}));
+              console.log('🔐 SERVER: nodeResults details:', JSON.stringify(mergedState.nodeResults, null, 2).substring(0, 2000));
+
               // Include nodeResults so client has all data for approval UI
               sendEvent('workflow_paused', {
                 reason: 'pending_authorization',

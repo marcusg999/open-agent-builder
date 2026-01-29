@@ -203,6 +203,20 @@ export function useWorkflowExecution() {
 
               // Check for pending auth
               if (data.pendingAuth) {
+                console.log('🔐 Pending auth detected!');
+                console.log('🔐 data.nodeResults:', data.nodeResults ? Object.keys(data.nodeResults) : 'none');
+                console.log('🔐 Full data.nodeResults:', JSON.stringify(data.nodeResults, null, 2));
+
+                // IMPORTANT: Update nodeResults BEFORE setting pendingAuth
+                // This ensures the ExecutionPanel has the data it needs
+                if (data.nodeResults) {
+                  setNodeResults(prev => {
+                    const updated = { ...prev, ...data.nodeResults };
+                    console.log('🔐 Setting nodeResults with keys:', Object.keys(updated));
+                    return updated;
+                  });
+                }
+
                 setPendingAuth(data.pendingAuth);
 
                 // Set execution status to waiting-auth

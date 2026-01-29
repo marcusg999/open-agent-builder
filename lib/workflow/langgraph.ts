@@ -252,6 +252,32 @@ export class LangGraphExecutor {
         continue;
       }
 
+      // Handle user-approval nodes with conditional routing (approve/reject branches)
+      if (sourceType === 'user-approval' || sourceType === 'user approval') {
+        if (!conditionalNodes.has(sourceId)) {
+          const routingFunction = this.createApprovalRouter(sourceId);
+          const pathMap: Record<string, string> = {};
+
+          for (const edge of sourceEdges) {
+            const handle = edge.sourceHandle || 'default';
+            // Normalize handle names: approve, approved, yes -> approve; reject, rejected, no -> reject
+            const normalizedHandle = handle.toLowerCase();
+            if (normalizedHandle.includes('approve') || normalizedHandle === 'yes' || normalizedHandle === 'default') {
+              pathMap['approve'] = edge.target;
+            } else if (normalizedHandle.includes('reject') || normalizedHandle === 'no') {
+              pathMap['reject'] = edge.target;
+            } else {
+              pathMap[handle] = edge.target;
+            }
+          }
+
+          console.log(`Setting up approval router for ${sourceId} with paths:`, pathMap);
+          builder.addConditionalEdges(sourceId as any, routingFunction, pathMap as any);
+          conditionalNodes.add(sourceId);
+        }
+        continue;
+      }
+
       // For regular nodes, add their outgoing edges
       for (const edge of sourceEdges) {
         // Verify target node exists
@@ -620,6 +646,42 @@ export class LangGraphExecutor {
 
       // Return the branch handle ('if' or 'else')
       return result.branch || 'else';
+    };
+  }
+
+  /**
+   * Create conditional router for user-approval nodes
+   * Routes to 'approve' or 'reject' based on the approval result in lastOutput
+   */
+  private createApprovalRouter(nodeId: string) {
+    return async (state: typeof WorkflowStateAnnotation.State) => {
+      const lastOutput = state.variables.lastOutput;
+      console.log(`Approval router for ${nodeId} checking lastOutput:`, JSON.stringify(lastOutput, null, 2));
+
+      // Check if lastOutput contains approval information
+      if (lastOutput && typeof lastOutput === 'object') {
+        const output = lastOutput as any;
+
+        // Check for explicit approved/rejected status
+        if (output.approved === true || output.status === 'approved') {
+          console.log(`Approval router: routing to 'approve' branch`);
+          return 'approve';
+        }
+        if (output.approved === false || output.status === 'rejected' || output.rejected === true) {
+          console.log(`Approval router: routing to 'reject' branch`);
+          return 'reject';
+        }
+
+        // If there are approved/selected images, consider it approved
+        if (output.approvedImages || output.selectedImages) {
+          console.log(`Approval router: found approved images, routing to 'approve' branch`);
+          return 'approve';
+        }
+      }
+
+      // Default to approve if no explicit rejection
+      console.log(`Approval router: defaulting to 'approve' branch`);
+      return 'approve';
     };
   }
 

@@ -100,32 +100,70 @@ export default function ExecutionPanel({
     if (!pendingAuth || pendingAuth.toolName !== 'user-approval') return [];
 
     console.log('🔍 Looking for images in nodeResults:', Object.keys(nodeResults));
+    console.log('🔍 Full nodeResults:', JSON.stringify(nodeResults, null, 2));
 
-    // Find the image-gen node result (look for images array in any node result)
+    // Helper to extract images from an output object
+    const extractImages = (output: any, sourceNodeId: string): ImageForApproval[] => {
+      if (!output || typeof output !== 'object') return [];
+
+      // Direct images array
+      if (output.images && Array.isArray(output.images)) {
+        console.log(`✅ Found images array in ${sourceNodeId}:`, output.images.length);
+        return output.images
+          .filter((img: any) => img.success)
+          .map((img: any, index: number) => ({
+            shotNumber: img.shotNumber || index + 1,
+            url: img.url || img.localPath,
+            localPath: img.localPath,
+            originalPrompt: img.originalPrompt || `Shot ${index + 1}`,
+            success: img.success,
+            selected: true,
+          }));
+      }
+
+      // Check nested in result property
+      if (output.result && typeof output.result === 'object') {
+        return extractImages(output.result, sourceNodeId + '.result');
+      }
+
+      return [];
+    };
+
+    // Search through all node results
     for (const [nodeId, result] of Object.entries(nodeResults)) {
-      console.log(`  Node ${nodeId}:`, {
+      console.log(`  Checking node ${nodeId}:`, {
         status: result.status,
         outputType: typeof result.output,
         outputKeys: result.output && typeof result.output === 'object' ? Object.keys(result.output as any) : [],
       });
 
+      const images = extractImages(result.output, nodeId);
+      if (images.length > 0) {
+        return images;
+      }
+
+      // Also check if output itself is the result (sometimes wrapped differently)
       if (result.output && typeof result.output === 'object') {
         const output = result.output as any;
-        if (output.images && Array.isArray(output.images)) {
-          console.log(`✅ Found images in node ${nodeId}:`, output.images.length, 'images');
-          return output.images
-            .filter((img: any) => img.success)
-            .map((img: any, index: number) => ({
-              shotNumber: img.shotNumber || index + 1,
-              url: img.url || img.localPath,
-              localPath: img.localPath,
-              originalPrompt: img.originalPrompt || `Shot ${index + 1}`,
-              success: img.success,
-              selected: true, // Default all selected
-            }));
+        // Check for image-gen specific fields
+        if (output.totalGenerated !== undefined && output.provider === 'replicate') {
+          console.log(`✅ Found image-gen output in ${nodeId} (totalGenerated: ${output.totalGenerated})`);
+          if (output.images && Array.isArray(output.images)) {
+            return output.images
+              .filter((img: any) => img.success)
+              .map((img: any, index: number) => ({
+                shotNumber: img.shotNumber || index + 1,
+                url: img.url || img.localPath,
+                localPath: img.localPath,
+                originalPrompt: img.originalPrompt || `Shot ${index + 1}`,
+                success: img.success,
+                selected: true,
+              }));
+          }
         }
       }
     }
+
     console.log('❌ No images found in any node result');
     return [];
   }, [pendingAuth, nodeResults]);

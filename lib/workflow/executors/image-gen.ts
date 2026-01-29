@@ -32,6 +32,46 @@ const FLUX_MODELS = {
 
 type FluxModelKey = keyof typeof FLUX_MODELS;
 
+/**
+ * Helper: Retry with exponential backoff for rate limiting
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 10000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if it's a rate limit error
+      const isRateLimit = error.message?.includes('429') ||
+                          error.message?.includes('rate limit') ||
+                          error.message?.includes('throttled');
+
+      if (!isRateLimit || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Extract retry_after if available, otherwise use exponential backoff
+      let waitTime = initialDelay * Math.pow(2, attempt);
+      const retryAfterMatch = error.message?.match(/resets in ~(\d+)s/);
+      if (retryAfterMatch) {
+        waitTime = (parseInt(retryAfterMatch[1]) + 2) * 1000; // Add 2s buffer
+      }
+
+      console.log(`⏸️ Rate limited (attempt ${attempt + 1}/${maxRetries + 1}), waiting ${Math.round(waitTime / 1000)}s...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  throw lastError;
+}
+
 interface ImageGenNode {
   id: string;
   data: any; // Accepts full NodeData from WorkflowNode
@@ -312,14 +352,16 @@ export async function executeImageGenNode(
       // Truncate prompt to Replicate's limit (typically 4000 chars)
       const truncatedPrompt = prompt.length > 4000 ? prompt.substring(0, 4000) : prompt;
 
-      // Generate image
-      const output = await replicate.run(model as any, {
-        input: {
-          prompt: truncatedPrompt,
-          num_inference_steps: numInferenceSteps,
-          aspect_ratio: aspectRatio || '4:3',
-        },
-      }) as any;
+      // Generate image with retry for rate limiting
+      const output = await withRetry(async () => {
+        return await replicate.run(model as any, {
+          input: {
+            prompt: truncatedPrompt,
+            num_inference_steps: numInferenceSteps,
+            aspect_ratio: aspectRatio || '4:3',
+          },
+        });
+      }, 3, 10000) as any;
 
       // Handle ReadableStream output
       if (Array.isArray(output) && output[0] instanceof ReadableStream) {
@@ -355,9 +397,10 @@ export async function executeImageGenNode(
         throw new Error('Unexpected output format from Replicate');
       }
 
-      // Rate limiting: Wait 1 second between requests
+      // Rate limiting: Wait 12 seconds between requests (Replicate low-credit limit: 6 req/min)
       if (i < promptsToGenerate.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('⏳ Waiting 12s before next request (rate limit protection)...');
+        await new Promise(resolve => setTimeout(resolve, 12000));
       }
 
     } catch (error: any) {

@@ -592,8 +592,8 @@ Return a JSON object with:
         // Image-gen feeds both approval (for video) and strategist (parallel)
         { id: "e7a", source: "tool-image-gen", target: "approval-images", animated: true },
         { id: "e7b", source: "tool-image-gen", target: "agent-strategist", animated: true },
-        // After approval, proceed to video generation
-        { id: "e8", source: "approval-images", target: "tool-video-gen", animated: true },
+        // After approval, proceed to video generation (sourceHandle required for conditional routing)
+        { id: "e8", source: "approval-images", sourceHandle: "approve", target: "tool-video-gen", animated: true },
         // Both parallel branches connect to end
         { id: "e9a", source: "tool-video-gen", target: "end-1", animated: true },
         { id: "e9b", source: "agent-strategist", target: "end-1", animated: true }

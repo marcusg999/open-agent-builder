@@ -16,6 +16,46 @@ if (ffmpegStatic) {
   ffmpeg.setFfmpegPath(ffmpegStatic);
 }
 
+/**
+ * Helper: Retry with exponential backoff for rate limiting
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 10000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if it's a rate limit error
+      const isRateLimit = error.message?.includes('429') ||
+                          error.message?.includes('rate limit') ||
+                          error.message?.includes('throttled');
+
+      if (!isRateLimit || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Extract retry_after if available, otherwise use exponential backoff
+      let waitTime = initialDelay * Math.pow(2, attempt);
+      const retryAfterMatch = error.message?.match(/resets in ~(\d+)s/);
+      if (retryAfterMatch) {
+        waitTime = (parseInt(retryAfterMatch[1]) + 2) * 1000; // Add 2s buffer
+      }
+
+      console.log(`⏸️ Rate limited (attempt ${attempt + 1}/${maxRetries + 1}), waiting ${Math.round(waitTime / 1000)}s...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  throw lastError;
+}
+
 interface VideoGenNode {
   id: string;
   data: any; // Accepts full NodeData from WorkflowNode
@@ -305,23 +345,27 @@ async function generateSingleClip(
         console.log(`  Using image-to-video mode with source: ${options.sourceImage}`);
         const imageUri = imageToDataUri(options.sourceImage);
 
-        output = await replicate.run(replicateModel as any, {
-          input: {
-            prompt: prompt,
-            image: imageUri,
-            duration: duration,
-            aspect_ratio: ratio,
-          },
-        });
+        output = await withRetry(async () => {
+          return await replicate.run(replicateModel as any, {
+            input: {
+              prompt: prompt,
+              image: imageUri,
+              duration: duration,
+              aspect_ratio: ratio,
+            },
+          });
+        }, 3, 10000);
       } else {
         console.log(`  Using text-to-video mode`);
-        output = await replicate.run(replicateModel as any, {
-          input: {
-            prompt: prompt,
-            duration: duration,
-            aspect_ratio: ratio,
-          },
-        });
+        output = await withRetry(async () => {
+          return await replicate.run(replicateModel as any, {
+            input: {
+              prompt: prompt,
+              duration: duration,
+              aspect_ratio: ratio,
+            },
+          });
+        }, 3, 10000);
       }
     } else {
       // Use MiniMax video-01 model (good quality, cost-effective)
@@ -332,19 +376,23 @@ async function generateSingleClip(
         console.log(`  Using image-to-video mode with source: ${options.sourceImage}`);
         const imageUri = imageToDataUri(options.sourceImage);
 
-        output = await replicate.run(replicateModel as any, {
-          input: {
-            prompt: prompt,
-            first_frame_image: imageUri,
-          },
-        });
+        output = await withRetry(async () => {
+          return await replicate.run(replicateModel as any, {
+            input: {
+              prompt: prompt,
+              first_frame_image: imageUri,
+            },
+          });
+        }, 3, 10000);
       } else {
         console.log(`  Using text-to-video mode`);
-        output = await replicate.run(replicateModel as any, {
-          input: {
-            prompt: prompt,
-          },
-        });
+        output = await withRetry(async () => {
+          return await replicate.run(replicateModel as any, {
+            input: {
+              prompt: prompt,
+            },
+          });
+        }, 3, 10000);
       }
     }
 
@@ -499,14 +547,24 @@ async function stitchClipsWithFFmpeg(
 /**
  * Main Executor
  */
+// Helper to log to file for debugging
+function logToFile(message: string) {
+  const logPath = path.join(process.cwd(), 'video-gen-debug.log');
+  const timestamp = new Date().toISOString();
+  fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+}
+
 export async function executeVideoGenNode(
   node: VideoGenNode,
   state: WorkflowState,
   apiKeys?: { replicate?: string }
 ): Promise<VideoGenOutput> {
   console.log('🎬 Video Generation Node Starting...');
+  logToFile('🎬 Video Generation Node Starting...');
   console.log('Node ID:', node.id);
+  logToFile(`Node ID: ${node.id}`);
   console.log('Available API keys:', Object.keys(apiKeys || {}));
+  logToFile(`Available API keys: ${Object.keys(apiKeys || {}).join(', ')}`);
 
   const startTime = Date.now();
 
@@ -530,8 +588,11 @@ export async function executeVideoGenNode(
 
   // Extract prompts from previous node output
   const lastOutput = state.variables.lastOutput;
-  console.log('🎬 Video-gen received lastOutput:', JSON.stringify(lastOutput, null, 2));
+  const lastOutputStr = JSON.stringify(lastOutput, null, 2);
+  console.log('🎬 Video-gen received lastOutput:', lastOutputStr);
+  logToFile(`🎬 Video-gen received lastOutput: ${lastOutputStr}`);
   console.log('🎬 Video-gen state.variables keys:', Object.keys(state.variables));
+  logToFile(`🎬 Video-gen state.variables keys: ${Object.keys(state.variables).join(', ')}`);
 
   let prompts: Array<{
     shotNumber?: number;
@@ -543,12 +604,17 @@ export async function executeVideoGenNode(
   // Check if lastOutput contains approved images from an approval node
   if (lastOutput && typeof lastOutput === 'object') {
     const output = lastOutput as any;
-    console.log('🎬 lastOutput keys:', Object.keys(output));
+    const outputKeys = Object.keys(output);
+    console.log('🎬 lastOutput keys:', outputKeys);
+    logToFile(`🎬 lastOutput keys: ${outputKeys.join(', ')}`);
     console.log('🎬 Has approvedImages:', !!output.approvedImages);
+    logToFile(`🎬 Has approvedImages: ${!!output.approvedImages}`);
     console.log('🎬 Has selectedImages:', !!output.selectedImages);
+    logToFile(`🎬 Has selectedImages: ${!!output.selectedImages}`);
 
     // Check for approved images from user-approval node
     if (output.approvedImages && Array.isArray(output.approvedImages)) {
+      logToFile(`✅ Found ${output.approvedImages.length} approved images`);
       console.log('✅ Using approved images from approval node:', output.approvedImages.length);
       prompts = output.approvedImages.map((img: any, index: number) => ({
         shotNumber: img.shotNumber || index + 1,
@@ -573,9 +639,16 @@ export async function executeVideoGenNode(
   }
 
   console.log(`Found ${prompts.length} prompts to generate`);
+  logToFile(`Found ${prompts.length} prompts to generate`);
+
+  // Log prompt details
+  prompts.forEach((p, i) => {
+    logToFile(`  Prompt ${i + 1}: shotNumber=${p.shotNumber}, sourceImage=${p.sourceImage || 'none'}, prompt=${p.prompt?.substring(0, 50)}...`);
+  });
 
   // Ensure output directory exists
   const outputDir = ensurePublicDirectory('generated-videos');
+  logToFile(`Output directory: ${outputDir}`);
 
   // Safety limit - video generation is expensive
   const MAX_CLIPS = 10;
@@ -619,13 +692,15 @@ export async function executeVideoGenNode(
         failCount++;
       }
 
-      // Rate limiting: 2 second delay between requests
+      // Rate limiting: 15 second delay between requests (Replicate low-credit limit: 6 req/min)
       if (i < promptsToGenerate.length - 1) {
-        console.log('Waiting 2 seconds before next request...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('⏳ Waiting 15s before next request (rate limit protection)...');
+        await new Promise(resolve => setTimeout(resolve, 15000));
       }
     } catch (error: any) {
       console.error(`❌ Failed to generate video for shot ${shotNumber}:`, error.message);
+      logToFile(`❌ CLIP ERROR for shot ${shotNumber}: ${error.message}`);
+      logToFile(`   Stack: ${error.stack || 'no stack'}`);
 
       clips.push({
         shotNumber,

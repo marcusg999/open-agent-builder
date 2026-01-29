@@ -402,4 +402,8 @@ export const nodeTypes = {
   'while': CustomNode,
   'user-approval': CustomNode,
   'set-state': CustomNode,
+  // Media generation nodes
+  'passthrough': CustomNode,
+  'image-gen': CustomNode,
+  'video-gen': CustomNode,
 };
